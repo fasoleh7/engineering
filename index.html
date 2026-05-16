@@ -507,6 +507,23 @@
       letter-spacing: 4px;
     }
 
+    /* INVALID INPUT STATE */
+    .field input.input-invalid {
+      border-color: var(--red) !important;
+      box-shadow: 0 0 0 3px rgba(255,77,106,0.15) !important;
+    }
+    .field input.input-valid {
+      border-color: var(--green) !important;
+      box-shadow: 0 0 0 3px rgba(0,229,160,0.1) !important;
+    }
+    .sparepart-hint {
+      font-size: 11px;
+      margin-top: 5px;
+      font-family: 'DM Mono', monospace;
+    }
+    .sparepart-hint.hint-error { color: var(--red); }
+    .sparepart-hint.hint-ok { color: var(--green); }
+
     /* DIVIDER */
     .section-gap { height: 20px; }
 
@@ -715,6 +732,7 @@
         <input type="text" id="sparepartMasuk" autocomplete="off"
           placeholder="Ketik nama sparepart..." onkeyup="searchMasuk()" required>
         <div class="autocomplete-list" id="resultMasuk"></div>
+        <div class="sparepart-hint" id="hintMasuk"></div>
       </div>
 
       <div class="field green">
@@ -771,6 +789,7 @@
         <input type="text" id="sparepartKeluar" autocomplete="off"
           placeholder="Ketik nama sparepart..." onkeyup="searchKeluar()" required>
         <div class="autocomplete-list" id="resultKeluar"></div>
+        <div class="sparepart-hint" id="hintKeluar"></div>
       </div>
 
       <div class="field red">
@@ -1017,29 +1036,81 @@ async function loadRiwayatKeluar() {
 
 // Autocomplete
 function searchMasuk() {
-  const kw = document.getElementById('sparepartMasuk').value.toLowerCase();
+  const input = document.getElementById('sparepartMasuk');
+  const kw = input.value.toLowerCase();
+  const raw = input.value.trim();
   const list = document.getElementById('resultMasuk');
+  const hint = document.getElementById('hintMasuk');
   list.innerHTML = '';
-  if (kw.length < 1) return;
-  sparepartList.filter(n => n.toLowerCase().includes(kw)).forEach(n => {
+
+  // Reset state when empty
+  if (kw.length < 1) {
+    input.classList.remove('input-invalid', 'input-valid');
+    if (hint) { hint.textContent = ''; hint.className = 'sparepart-hint'; }
+    return;
+  }
+
+  const filtered = sparepartList.filter(n => n.toLowerCase().includes(kw));
+  const exactMatch = sparepartList.includes(raw);
+
+  // Visual feedback
+  if (exactMatch) {
+    input.classList.remove('input-invalid'); input.classList.add('input-valid');
+    if (hint) { hint.textContent = '✓ Sparepart ditemukan'; hint.className = 'sparepart-hint hint-ok'; }
+  } else {
+    input.classList.remove('input-valid'); input.classList.add('input-invalid');
+    if (hint) { hint.textContent = filtered.length > 0 ? 'Pilih dari daftar di bawah' : '✗ Sparepart tidak ada di stok'; hint.className = 'sparepart-hint hint-error'; }
+  }
+
+  filtered.forEach(n => {
     const d = document.createElement('div');
     d.className = 'autocomplete-item';
     d.textContent = n;
-    d.onclick = () => { document.getElementById('sparepartMasuk').value = n; list.innerHTML = ''; };
+    d.onclick = () => {
+      input.value = n;
+      input.classList.remove('input-invalid'); input.classList.add('input-valid');
+      if (hint) { hint.textContent = '✓ Sparepart ditemukan'; hint.className = 'sparepart-hint hint-ok'; }
+      list.innerHTML = '';
+    };
     list.appendChild(d);
   });
 }
 
 function searchKeluar() {
-  const kw = document.getElementById('sparepartKeluar').value.toLowerCase();
+  const input = document.getElementById('sparepartKeluar');
+  const kw = input.value.toLowerCase();
+  const raw = input.value.trim();
   const list = document.getElementById('resultKeluar');
+  const hint = document.getElementById('hintKeluar');
   list.innerHTML = '';
-  if (kw.length < 1) return;
-  sparepartList.filter(n => n.toLowerCase().includes(kw)).forEach(n => {
+
+  if (kw.length < 1) {
+    input.classList.remove('input-invalid', 'input-valid');
+    if (hint) { hint.textContent = ''; hint.className = 'sparepart-hint'; }
+    return;
+  }
+
+  const filtered = sparepartList.filter(n => n.toLowerCase().includes(kw));
+  const exactMatch = sparepartList.includes(raw);
+
+  if (exactMatch) {
+    input.classList.remove('input-invalid'); input.classList.add('input-valid');
+    if (hint) { hint.textContent = '✓ Sparepart ditemukan'; hint.className = 'sparepart-hint hint-ok'; }
+  } else {
+    input.classList.remove('input-valid'); input.classList.add('input-invalid');
+    if (hint) { hint.textContent = filtered.length > 0 ? 'Pilih dari daftar di bawah' : '✗ Sparepart tidak ada di stok'; hint.className = 'sparepart-hint hint-error'; }
+  }
+
+  filtered.forEach(n => {
     const d = document.createElement('div');
     d.className = 'autocomplete-item';
     d.textContent = n;
-    d.onclick = () => { document.getElementById('sparepartKeluar').value = n; list.innerHTML = ''; };
+    d.onclick = () => {
+      input.value = n;
+      input.classList.remove('input-invalid'); input.classList.add('input-valid');
+      if (hint) { hint.textContent = '✓ Sparepart ditemukan'; hint.className = 'sparepart-hint hint-ok'; }
+      list.innerHTML = '';
+    };
     list.appendChild(d);
   });
 }
@@ -1057,9 +1128,16 @@ async function submitMasuk() {
   const token = document.getElementById('token').value;
   if (token !== '204115') { showToast('Token salah!', 'error'); return; }
 
-  const sparepart = document.getElementById('sparepartMasuk').value;
+  const sparepart = document.getElementById('sparepartMasuk').value.trim();
   const qty = document.getElementById('qtyMasuk').value;
   if (!sparepart || !qty) { showToast('Isi semua field!', 'error'); return; }
+
+  // Validasi: sparepart harus ada di daftar stok
+  if (!sparepartList.includes(sparepart)) {
+    showToast('Sparepart "' + sparepart + '" tidak ditemukan di stok!', 'error');
+    document.getElementById('sparepartMasuk').focus();
+    return;
+  }
 
   try {
     const res = await fetch(API_URL, {
@@ -1081,11 +1159,18 @@ async function submitMasuk() {
 
 // Submit keluar
 async function submitKeluar() {
-  const mesin = document.getElementById('mesinKeluar').value;
-  const nama = document.getElementById('namaKeluar').value;
-  const sparepart = document.getElementById('sparepartKeluar').value;
+  const mesin = document.getElementById('mesinKeluar').value.trim();
+  const nama = document.getElementById('namaKeluar').value.trim();
+  const sparepart = document.getElementById('sparepartKeluar').value.trim();
   const qty = document.getElementById('qtyKeluar').value;
   if (!mesin || !nama || !sparepart || !qty) { showToast('Isi semua field!', 'error'); return; }
+
+  // Validasi: sparepart harus ada di daftar stok
+  if (!sparepartList.includes(sparepart)) {
+    showToast('Sparepart "' + sparepart + '" tidak ditemukan di stok!', 'error');
+    document.getElementById('sparepartKeluar').focus();
+    return;
+  }
 
   try {
     const res = await fetch(API_URL, {
