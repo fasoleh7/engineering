@@ -842,9 +842,13 @@ function val(obj, keys) {
   return '';
 }
 
-// Fetch helper with error handling
+// Fetch helper with cache-busting and error handling
 async function apiFetch(url) {
-  const res = await fetch(url, { mode: 'cors' });
+  const sep = url.includes('?') ? '&' : '?';
+  const res = await fetch(url + sep + '_=' + Date.now(), {
+    mode: 'cors',
+    cache: 'no-store'
+  });
   const text = await res.text();
   try {
     return JSON.parse(text);
