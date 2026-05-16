@@ -832,6 +832,16 @@ function showPage(page) {
   document.getElementById(map[page]).classList.add(cls[page]);
 }
 
+// Key-normalizing helper — tries multiple possible field names
+function val(obj, keys) {
+  for (const k of keys) {
+    if (obj[k] !== undefined && obj[k] !== null && String(obj[k]).trim() !== '') {
+      return String(obj[k]).trim();
+    }
+  }
+  return '';
+}
+
 // Fetch helper with error handling
 async function apiFetch(url) {
   const res = await fetch(url, { mode: 'cors' });
@@ -920,17 +930,18 @@ async function loadRiwayatMasuk() {
       return;
     }
 
+    console.log('[DEBUG] Masuk raw data:', JSON.stringify(data));
+
     const reversed = [...data].reverse();
     reversed.forEach(item => {
       const row = document.createElement('tr');
-      // Normalize keys (handle possible casing issues)
-      const tanggal = item.tanggal || item.Tanggal || item.date || '—';
-      const sparepart = item.sparepart || item.Sparepart || item.nama || '—';
-      const qty = item.qty || item.Qty || item.jumlah || '—';
+      const tanggal   = val(item, ['tanggal','Tanggal','date','Date']);
+      const sparepart = val(item, ['sparepart','Sparepart','nama_sparepart','part']);
+      const qty       = val(item, ['qty','Qty','QTY','jumlah','Jumlah','quantity']);
       row.innerHTML = `
-        <td style="color:var(--muted2);font-family:'DM Mono',monospace;font-size:12px">${escHtml(String(tanggal))}</td>
-        <td class="col-nama">${escHtml(String(sparepart))}</td>
-        <td class="col-qty" style="color:var(--green)">${escHtml(String(qty))}</td>
+        <td style="color:var(--muted2);font-family:'DM Mono',monospace;font-size:12px">${escHtml(tanggal || '—')}</td>
+        <td class="col-nama">${escHtml(sparepart || '—')}</td>
+        <td class="col-qty" style="color:var(--green)">${escHtml(qty || '—')}</td>
       `;
       tbody.appendChild(row);
     });
@@ -958,21 +969,39 @@ async function loadRiwayatKeluar() {
       return;
     }
 
+    console.log('[DEBUG] Keluar raw data:', JSON.stringify(data));
+
     const reversed = [...data].reverse();
     reversed.forEach(item => {
       const row = document.createElement('tr');
-      const tanggal = item.tanggal || item.Tanggal || '—';
-      const mesin = item.mesin || item.Mesin || '—';
-      const sparepart = item.sparepart || item.Sparepart || '—';
-      const qty = item.qty || item.Qty || '—';
-      const nama = item.nama || item.Nama || item.operator || '—';
+
+      // Normalize — try every possible key the API might return
+      const tanggal  = val(item, ['tanggal','Tanggal','date','Date']);
+      const mesin    = val(item, ['mesin','Mesin','machine','Machine']);
+      const sparepart= val(item, ['sparepart','Sparepart','nama_sparepart','part']);
+      const qty      = val(item, ['qty','Qty','QTY','jumlah','Jumlah','quantity']);
+      const nama     = val(item, ['nama','Nama','operator','Operator','nama_operator']);
+
+      // Detect legacy/corrupt rows: all critical fields empty but nama has a value
+      const isLegacy = !tanggal && !mesin && !sparepart && !qty && nama;
+
+      const mesinDisplay = mesin
+        ? escHtml(mesin)
+        : (isLegacy ? '<em style="color:var(--muted);font-style:italic">data lama</em>' : '—');
+
       row.innerHTML = `
-        <td style="color:var(--muted2);font-family:'DM Mono',monospace;font-size:12px">${escHtml(String(tanggal))}</td>
-        <td>${escHtml(String(mesin))}</td>
-        <td class="col-nama">${escHtml(String(sparepart))}</td>
-        <td class="col-qty" style="color:var(--red)">${escHtml(String(qty))}</td>
-        <td style="color:var(--muted2)">${escHtml(String(nama))}</td>
+        <td style="color:var(--muted2);font-family:'DM Mono',monospace;font-size:12px">
+          ${escHtml(tanggal || '—')}
+        </td>
+        <td>${mesinDisplay}</td>
+        <td class="col-nama">${escHtml(sparepart || '—')}</td>
+        <td class="col-qty" style="color:var(--red)">${escHtml(qty || '—')}</td>
+        <td style="color:var(--muted2)">${escHtml(nama || '—')}</td>
       `;
+
+      // Mark legacy rows visually
+      if (isLegacy) row.style.opacity = '0.55';
+
       tbody.appendChild(row);
     });
   } catch(e) {
