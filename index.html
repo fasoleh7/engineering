@@ -1,13 +1,17 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
   <title>Stok Sparepart</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
 
   <style>
+
     body{
       background:#f3f4f6;
     }
@@ -45,39 +49,55 @@
       font-size:12px;
       font-weight:bold;
     }
+
   </style>
 
 </head>
+
 <body>
 
 <!-- HEADER -->
+
 <div class="bg-blue-700 text-white p-4 shadow">
+
   <h1 class="text-2xl font-bold">
     DATA STOK SPAREPART
   </h1>
+
 </div>
 
 <!-- MENU -->
+
 <div class="bg-white p-4 flex gap-2 flex-wrap shadow">
 
-  <button onclick="showPage('stok')"
+  <button
+    onclick="showPage('stok')"
     class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+
     Dashboard
+
   </button>
 
-  <button onclick="showPage('masuk')"
+  <button
+    onclick="showPage('masuk')"
     class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
+
     Stok Masuk
+
   </button>
 
-  <button onclick="showPage('keluar')"
+  <button
+    onclick="showPage('keluar')"
     class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">
+
     Stok Keluar
+
   </button>
 
 </div>
 
 <!-- DASHBOARD -->
+
 <section id="page-stok" class="p-4">
 
   <div class="card">
@@ -104,6 +124,7 @@
         <thead class="bg-yellow-300">
 
           <tr>
+
             <th class="border p-2">No</th>
             <th class="border p-2">Nama Sparepart</th>
             <th class="border p-2">Status</th>
@@ -111,6 +132,7 @@
             <th class="border p-2">Masuk</th>
             <th class="border p-2">Keluar</th>
             <th class="border p-2">Sisa</th>
+
           </tr>
 
         </thead>
@@ -125,10 +147,11 @@
 
 </section>
 
-<!-- MASUK -->
+<!-- STOK MASUK -->
+
 <section id="page-masuk" class="hidden p-4">
 
-  <div class="card max-w-lg mx-auto">
+  <div class="card max-w-lg mx-auto mb-6">
 
     <h2 class="text-2xl font-bold text-green-700 mb-4">
       FORM STOK MASUK
@@ -137,51 +160,106 @@
     <form id="formMasuk" class="space-y-3">
 
       <div>
-        <label class="font-semibold">Token</label>
+
+        <label class="font-semibold">
+          Token
+        </label>
 
         <input
           type="password"
           id="token"
-          class="w-full border p-2 rounded"
           placeholder="Masukkan token"
-          required>
-      </div>
-
-      <div>
-        <label class="font-semibold">Pilih Sparepart</label>
-
-        <select
-          id="sparepartMasuk"
           class="w-full border p-2 rounded"
           required>
-        </select>
+
+      </div>
+
+      <div class="relative">
+
+        <label class="font-semibold">
+          Cari Sparepart
+        </label>
+
+        <input
+          type="text"
+          id="sparepartMasuk"
+          autocomplete="off"
+          placeholder="Ketik nama sparepart..."
+          class="w-full border p-2 rounded"
+          onkeyup="searchMasuk()"
+          required>
+
+        <div
+          id="resultMasuk"
+          class="absolute bg-white border w-full rounded shadow z-50 max-h-48 overflow-auto">
+        </div>
+
       </div>
 
       <div>
-        <label class="font-semibold">Qty Masuk</label>
+
+        <label class="font-semibold">
+          Qty Masuk
+        </label>
 
         <input
           type="number"
           id="qtyMasuk"
           class="w-full border p-2 rounded"
           required>
+
       </div>
 
       <button
         class="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded">
+
         SIMPAN
+
       </button>
 
     </form>
 
   </div>
 
+  <!-- RIWAYAT MASUK -->
+
+  <div class="card">
+
+    <h2 class="text-2xl font-bold text-green-700 mb-4">
+      RIWAYAT STOK MASUK
+    </h2>
+
+    <div class="overflow-auto">
+
+      <table class="w-full border border-gray-300">
+
+        <thead class="bg-green-200">
+
+          <tr>
+
+            <th class="border p-2">Tanggal</th>
+            <th class="border p-2">Sparepart</th>
+            <th class="border p-2">Qty</th>
+
+          </tr>
+
+        </thead>
+
+        <tbody id="tableMasuk"></tbody>
+
+      </table>
+
+    </div>
+
+  </div>
+
 </section>
 
-<!-- KELUAR -->
+<!-- STOK KELUAR -->
+
 <section id="page-keluar" class="hidden p-4">
 
-  <div class="card max-w-lg mx-auto">
+  <div class="card max-w-lg mx-auto mb-6">
 
     <h2 class="text-2xl font-bold text-red-700 mb-4">
       FORM STOK KELUAR
@@ -190,51 +268,111 @@
     <form id="formKeluar" class="space-y-3">
 
       <div>
-        <label class="font-semibold">Mesin</label>
+
+        <label class="font-semibold">
+          Mesin
+        </label>
 
         <input
           type="text"
           id="mesinKeluar"
           class="w-full border p-2 rounded"
           required>
+
       </div>
 
       <div>
-        <label class="font-semibold">Nama Operator</label>
+
+        <label class="font-semibold">
+          Nama Operator
+        </label>
 
         <input
           type="text"
           id="namaKeluar"
           class="w-full border p-2 rounded"
           required>
+
       </div>
 
-      <div>
-        <label class="font-semibold">Pilih Sparepart</label>
+      <div class="relative">
 
-        <select
+        <label class="font-semibold">
+          Cari Sparepart
+        </label>
+
+        <input
+          type="text"
           id="sparepartKeluar"
+          autocomplete="off"
+          placeholder="Ketik nama sparepart..."
           class="w-full border p-2 rounded"
+          onkeyup="searchKeluar()"
           required>
-        </select>
+
+        <div
+          id="resultKeluar"
+          class="absolute bg-white border w-full rounded shadow z-50 max-h-48 overflow-auto">
+        </div>
+
       </div>
 
       <div>
-        <label class="font-semibold">Qty Keluar</label>
+
+        <label class="font-semibold">
+          Qty Keluar
+        </label>
 
         <input
           type="number"
           id="qtyKeluar"
           class="w-full border p-2 rounded"
           required>
+
       </div>
 
       <button
         class="w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded">
+
         SIMPAN
+
       </button>
 
     </form>
+
+  </div>
+
+  <!-- RIWAYAT KELUAR -->
+
+  <div class="card">
+
+    <h2 class="text-2xl font-bold text-red-700 mb-4">
+      RIWAYAT STOK KELUAR
+    </h2>
+
+    <div class="overflow-auto">
+
+      <table class="w-full border border-gray-300">
+
+        <thead class="bg-red-200">
+
+          <tr>
+
+            <th class="border p-2">Tanggal</th>
+            <th class="border p-2">Mesin</th>
+            <th class="border p-2">Sparepart</th>
+            <th class="border p-2">Qty</th>
+            <th class="border p-2">Operator</th>
+
+          </tr>
+
+        </thead>
+
+        <tbody id="tableKeluar"></tbody>
+
+      </table>
+
+    </div>
 
   </div>
 
@@ -242,21 +380,33 @@
 
 <script>
 
-const API_URL = "https://script.google.com/macros/s/AKfycbxXWmEqtPHrVybydGJeb7frvd-cvTIVvlyh7n9Nry4glO5Axv9gxsgm2Oco0wT5ucVq/exec";
+const API_URL =
+"https://script.google.com/macros/s/AKfycbxXWmEqtPHrVybydGJeb7frvd-cvTIVvlyh7n9Nry4glO5Axv9gxsgm2Oco0wT5ucVq/exec";
+
+let sparepartList = [];
 
 function showPage(page){
 
-  document.getElementById('page-stok').classList.add('hidden');
-  document.getElementById('page-masuk').classList.add('hidden');
-  document.getElementById('page-keluar').classList.add('hidden');
+  document.getElementById('page-stok')
+  .classList.add('hidden');
 
-  document.getElementById('page-' + page).classList.remove('hidden');
+  document.getElementById('page-masuk')
+  .classList.add('hidden');
+
+  document.getElementById('page-keluar')
+  .classList.add('hidden');
+
+  document.getElementById('page-' + page)
+  .classList.remove('hidden');
 }
 
 async function loadStock(){
 
-  const res = await fetch(API_URL);
-  const data = await res.json();
+  const res =
+    await fetch(API_URL);
+
+  const data =
+    await res.json();
 
   const table =
     document.getElementById('tableStock');
@@ -290,51 +440,138 @@ async function loadStock(){
     }
 
     table.innerHTML += `
+
       <tr>
-        <td class="border p-2">${index+1}</td>
-        <td class="border p-2">${item.nama}</td>
-        <td class="border p-2">${badge}</td>
-        <td class="border p-2">${item.stok}</td>
-        <td class="border p-2">${item.masuk}</td>
-        <td class="border p-2">${item.keluar}</td>
-        <td class="border p-2 font-bold">${item.sisa}</td>
+
+        <td class="border p-2">
+          ${index+1}
+        </td>
+
+        <td class="border p-2">
+          ${item.nama}
+        </td>
+
+        <td class="border p-2">
+          ${badge}
+        </td>
+
+        <td class="border p-2">
+          ${item.stok}
+        </td>
+
+        <td class="border p-2">
+          ${item.masuk}
+        </td>
+
+        <td class="border p-2">
+          ${item.keluar}
+        </td>
+
+        <td class="border p-2 font-bold">
+          ${item.sisa}
+        </td>
+
       </tr>
+
     `;
   });
 
 }
 
-async function loadDropdown(){
+async function loadSparepart(){
 
-  const res = await fetch(API_URL);
-  const data = await res.json();
+  const res =
+    await fetch(API_URL);
 
-  const masuk =
-    document.getElementById('sparepartMasuk');
+  const data =
+    await res.json();
 
-  const keluar =
-    document.getElementById('sparepartKeluar');
+  sparepartList =
+    data.map(item => item.nama);
+}
 
-  masuk.innerHTML =
-    '<option value="">Pilih Sparepart</option>';
+function searchMasuk(){
 
-  keluar.innerHTML =
-    '<option value="">Pilih Sparepart</option>';
+  const keyword =
+    document.getElementById('sparepartMasuk')
+    .value
+    .toLowerCase();
 
-  data.forEach(item=>{
+  const result =
+    document.getElementById('resultMasuk');
 
-    masuk.innerHTML += `
-      <option value="${item.nama}">
-        ${item.nama}
-      </option>
-    `;
+  result.innerHTML = '';
 
-    keluar.innerHTML += `
-      <option value="${item.nama}">
-        ${item.nama}
-      </option>
+  if(keyword.length < 1) return;
+
+  const filtered =
+    sparepartList.filter(item =>
+      item.toLowerCase().includes(keyword)
+    );
+
+  filtered.forEach(item=>{
+
+    result.innerHTML += `
+      <div
+        onclick="selectMasuk('${item}')"
+        class="p-2 hover:bg-gray-100 cursor-pointer border-b">
+
+        ${item}
+
+      </div>
     `;
   });
+}
+
+function selectMasuk(name){
+
+  document.getElementById('sparepartMasuk')
+  .value = name;
+
+  document.getElementById('resultMasuk')
+  .innerHTML = '';
+}
+
+function searchKeluar(){
+
+  const keyword =
+    document.getElementById('sparepartKeluar')
+    .value
+    .toLowerCase();
+
+  const result =
+    document.getElementById('resultKeluar');
+
+  result.innerHTML = '';
+
+  if(keyword.length < 1) return;
+
+  const filtered =
+    sparepartList.filter(item =>
+      item.toLowerCase().includes(keyword)
+    );
+
+  filtered.forEach(item=>{
+
+    result.innerHTML += `
+      <div
+        onclick="selectKeluar('${item}')"
+        class="p-2 hover:bg-gray-100 cursor-pointer border-b">
+
+        ${item}
+
+      </div>
+    `;
+  });
+}
+
+function selectKeluar(name){
+
+  document.getElementById('sparepartKeluar')
+  .value = name;
+
+  document.getElementById('resultKeluar')
+  .innerHTML = '';
 }
 
 function searchTable(){
@@ -356,6 +593,88 @@ function searchTable(){
       text.includes(input)
       ? ''
       : 'none';
+  });
+}
+
+async function loadRiwayatMasuk(){
+
+  const res =
+    await fetch(API_URL + '?type=masuk');
+
+  const data =
+    await res.json();
+
+  const table =
+    document.getElementById('tableMasuk');
+
+  table.innerHTML = '';
+
+  data.reverse().forEach(item=>{
+
+    table.innerHTML += `
+
+      <tr>
+
+        <td class="border p-2">
+          ${item.tanggal}
+        </td>
+
+        <td class="border p-2">
+          ${item.sparepart}
+        </td>
+
+        <td class="border p-2">
+          ${item.qty}
+        </td>
+
+      </tr>
+
+    `;
+  });
+}
+
+async function loadRiwayatKeluar(){
+
+  const res =
+    await fetch(API_URL + '?type=keluar');
+
+  const data =
+    await res.json();
+
+  const table =
+    document.getElementById('tableKeluar');
+
+  table.innerHTML = '';
+
+  data.reverse().forEach(item=>{
+
+    table.innerHTML += `
+
+      <tr>
+
+        <td class="border p-2">
+          ${item.tanggal}
+        </td>
+
+        <td class="border p-2">
+          ${item.mesin}
+        </td>
+
+        <td class="border p-2">
+          ${item.sparepart}
+        </td>
+
+        <td class="border p-2">
+          ${item.qty}
+        </td>
+
+        <td class="border p-2">
+          ${item.nama}
+        </td>
+
+      </tr>
+
+    `;
   });
 }
 
@@ -385,16 +704,20 @@ document.getElementById('formMasuk')
   };
 
   const res = await fetch(API_URL,{
+
     method:'POST',
+
     body:JSON.stringify(body)
   });
 
-  const result = await res.text();
+  const result =
+    await res.text();
 
   alert(result);
 
   loadStock();
-  loadDropdown();
+  loadSparepart();
+  loadRiwayatMasuk();
 
   e.target.reset();
 });
@@ -422,22 +745,28 @@ document.getElementById('formKeluar')
   };
 
   const res = await fetch(API_URL,{
+
     method:'POST',
+
     body:JSON.stringify(body)
   });
 
-  const result = await res.text();
+  const result =
+    await res.text();
 
   alert(result);
 
   loadStock();
-  loadDropdown();
+  loadSparepart();
+  loadRiwayatKeluar();
 
   e.target.reset();
 });
 
 loadStock();
-loadDropdown();
+loadSparepart();
+loadRiwayatMasuk();
+loadRiwayatKeluar();
 
 </script>
 
