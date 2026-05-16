@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Stok Sparepart</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <style>
+    body{
+      background:#f3f4f6;
+    }
+
+    .card{
+      background:white;
+      border-radius:12px;
+      padding:20px;
+      box-shadow:0 2px 10px rgba(0,0,0,0.1);
+    }
+
+    .status-ready{
+      background:#16a34a;
+      color:white;
+      padding:4px 10px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:bold;
+    }
+
+    .status-warning{
+      background:#facc15;
+      color:black;
+      padding:4px 10px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:bold;
+    }
+
+    .status-danger{
+      background:#dc2626;
+      color:white;
+      padding:4px 10px;
+      border-radius:999px;
+      font-size:12px;
+      font-weight:bold;
+    }
+  </style>
+
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="bg-blue-700 text-white p-4 shadow">
+  <h1 class="text-2xl font-bold">
+    DATA STOK SPAREPART
+  </h1>
+</div>
+
+<!-- MENU -->
+<div class="bg-white p-4 flex gap-2 flex-wrap shadow">
+
+  <button onclick="showPage('stok')"
+    class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+    Dashboard
+  </button>
+
+  <button onclick="showPage('masuk')"
+    class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded">
+    Stok Masuk
+  </button>
+
+  <button onclick="showPage('keluar')"
+    class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded">
+    Stok Keluar
+  </button>
+
+</div>
+
+<!-- DASHBOARD -->
+<section id="page-stok" class="p-4">
+
+  <div class="card">
+
+    <div class="flex flex-col md:flex-row gap-3 justify-between mb-4">
+
+      <h2 class="text-2xl font-bold">
+        STOK SPAREPART
+      </h2>
+
+      <input
+        type="text"
+        id="searchInput"
+        placeholder="Cari sparepart..."
+        class="border p-2 rounded w-full md:w-72"
+        onkeyup="searchTable()">
+
+    </div>
+
+    <div class="overflow-auto">
+
+      <table class="w-full border border-gray-300">
+
+        <thead class="bg-yellow-300">
+
+          <tr>
+            <th class="border p-2">No</th>
+            <th class="border p-2">Nama Sparepart</th>
+            <th class="border p-2">Status</th>
+            <th class="border p-2">Stok</th>
+            <th class="border p-2">Masuk</th>
+            <th class="border p-2">Keluar</th>
+            <th class="border p-2">Sisa</th>
+          </tr>
+
+        </thead>
+
+        <tbody id="tableStock"></tbody>
+
+      </table>
+
+    </div>
+
+  </div>
+
+</section>
+
+<!-- MASUK -->
+<section id="page-masuk" class="hidden p-4">
+
+  <div class="card max-w-lg mx-auto">
+
+    <h2 class="text-2xl font-bold text-green-700 mb-4">
+      FORM STOK MASUK
+    </h2>
+
+    <form id="formMasuk" class="space-y-3">
+
+      <div>
+        <label class="font-semibold">Token</label>
+
+        <input
+          type="password"
+          id="token"
+          class="w-full border p-2 rounded"
+          placeholder="Masukkan token"
+          required>
+      </div>
+
+      <div>
+        <label class="font-semibold">Pilih Sparepart</label>
+
+        <select
+          id="sparepartMasuk"
+          class="w-full border p-2 rounded"
+          required>
+        </select>
+      </div>
+
+      <div>
+        <label class="font-semibold">Qty Masuk</label>
+
+        <input
+          type="number"
+          id="qtyMasuk"
+          class="w-full border p-2 rounded"
+          required>
+      </div>
+
+      <button
+        class="w-full bg-green-600 hover:bg-green-700 text-white py-2 rounded">
+        SIMPAN
+      </button>
+
+    </form>
+
+  </div>
+
+</section>
+
+<!-- KELUAR -->
+<section id="page-keluar" class="hidden p-4">
+
+  <div class="card max-w-lg mx-auto">
+
+    <h2 class="text-2xl font-bold text-red-700 mb-4">
+      FORM STOK KELUAR
+    </h2>
+
+    <form id="formKeluar" class="space-y-3">
+
+      <div>
+        <label class="font-semibold">Mesin</label>
+
+        <input
+          type="text"
+          id="mesinKeluar"
+          class="w-full border p-2 rounded"
+          required>
+      </div>
+
+      <div>
+        <label class="font-semibold">Nama Operator</label>
+
+        <input
+          type="text"
+          id="namaKeluar"
+          class="w-full border p-2 rounded"
+          required>
+      </div>
+
+      <div>
+        <label class="font-semibold">Pilih Sparepart</label>
+
+        <select
+          id="sparepartKeluar"
+          class="w-full border p-2 rounded"
+          required>
+        </select>
+      </div>
+
+      <div>
+        <label class="font-semibold">Qty Keluar</label>
+
+        <input
+          type="number"
+          id="qtyKeluar"
+          class="w-full border p-2 rounded"
+          required>
+      </div>
+
+      <button
+        class="w-full bg-red-600 hover:bg-red-700 text-white py-2 rounded">
+        SIMPAN
+      </button>
+
+    </form>
+
+  </div>
+
+</section>
+
+<script>
+
+const API_URL = "https://script.google.com/macros/s/AKfycbxXWmEqtPHrVybydGJeb7frvd-cvTIVvlyh7n9Nry4glO5Axv9gxsgm2Oco0wT5ucVq/exec";
+
+function showPage(page){
+
+  document.getElementById('page-stok').classList.add('hidden');
+  document.getElementById('page-masuk').classList.add('hidden');
+  document.getElementById('page-keluar').classList.add('hidden');
+
+  document.getElementById('page-' + page).classList.remove('hidden');
+}
+
+async function loadStock(){
+
+  const res = await fetch(API_URL);
+  const data = await res.json();
+
+  const table =
+    document.getElementById('tableStock');
+
+  table.innerHTML = '';
+
+  data.forEach((item,index)=>{
+
+    let badge = '';
+
+    if(item.sisa <= 0){
+
+      badge =
+      `<span class="status-danger">
+        HABIS
+      </span>`;
+
+    }else if(item.sisa <= 10){
+
+      badge =
+      `<span class="status-warning">
+        HAMPIR HABIS
+      </span>`;
+
+    }else{
+
+      badge =
+      `<span class="status-ready">
+        READY
+      </span>`;
+    }
+
+    table.innerHTML += `
+      <tr>
+        <td class="border p-2">${index+1}</td>
+        <td class="border p-2">${item.nama}</td>
+        <td class="border p-2">${badge}</td>
+        <td class="border p-2">${item.stok}</td>
+        <td class="border p-2">${item.masuk}</td>
+        <td class="border p-2">${item.keluar}</td>
+        <td class="border p-2 font-bold">${item.sisa}</td>
+      </tr>
+    `;
+  });
+
+}
+
+async function loadDropdown(){
+
+  const res = await fetch(API_URL);
+  const data = await res.json();
+
+  const masuk =
+    document.getElementById('sparepartMasuk');
+
+  const keluar =
+    document.getElementById('sparepartKeluar');
+
+  masuk.innerHTML =
+    '<option value="">Pilih Sparepart</option>';
+
+  keluar.innerHTML =
+    '<option value="">Pilih Sparepart</option>';
+
+  data.forEach(item=>{
+
+    masuk.innerHTML += `
+      <option value="${item.nama}">
+        ${item.nama}
+      </option>
+    `;
+
+    keluar.innerHTML += `
+      <option value="${item.nama}">
+        ${item.nama}
+      </option>
+    `;
+  });
+}
+
+function searchTable(){
+
+  const input =
+    document.getElementById('searchInput')
+    .value
+    .toLowerCase();
+
+  const rows =
+    document.querySelectorAll('#tableStock tr');
+
+  rows.forEach(row=>{
+
+    const text =
+      row.innerText.toLowerCase();
+
+    row.style.display =
+      text.includes(input)
+      ? ''
+      : 'none';
+  });
+}
+
+document.getElementById('formMasuk')
+.addEventListener('submit', async(e)=>{
+
+  e.preventDefault();
+
+  const token =
+    document.getElementById('token').value;
+
+  if(token !== '204115'){
+
+    alert('TOKEN SALAH');
+    return;
+  }
+
+  const body = {
+
+    action:'masuk',
+
+    sparepart:
+      document.getElementById('sparepartMasuk').value,
+
+    qty:
+      document.getElementById('qtyMasuk').value
+  };
+
+  const res = await fetch(API_URL,{
+    method:'POST',
+    body:JSON.stringify(body)
+  });
+
+  const result = await res.text();
+
+  alert(result);
+
+  loadStock();
+  loadDropdown();
+
+  e.target.reset();
+});
+
+document.getElementById('formKeluar')
+.addEventListener('submit', async(e)=>{
+
+  e.preventDefault();
+
+  const body = {
+
+    action:'keluar',
+
+    mesin:
+      document.getElementById('mesinKeluar').value,
+
+    nama:
+      document.getElementById('namaKeluar').value,
+
+    sparepart:
+      document.getElementById('sparepartKeluar').value,
+
+    qty:
+      document.getElementById('qtyKeluar').value
+  };
+
+  const res = await fetch(API_URL,{
+    method:'POST',
+    body:JSON.stringify(body)
+  });
+
+  const result = await res.text();
+
+  alert(result);
+
+  loadStock();
+  loadDropdown();
+
+  e.target.reset();
+});
+
+loadStock();
+loadDropdown();
+
+</script>
+
+</body>
+</html>
