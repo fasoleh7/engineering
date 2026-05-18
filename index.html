@@ -825,7 +825,7 @@
 </section>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbxHSMCeUza7Ch-eDYe-RWw_m3Iuuc8fIfjBfIrUgsbOOFDmh1Gh4V8HA1254THh8p2y/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbxXWmEqtPHrVybydGJeb7frvd-cvTIVvlyh7n9Nry4glO5Axv9gxsgm2Oco0wT5ucVq/exec";
 
 let sparepartList = [];
 let currentPage = 'stok';
@@ -903,7 +903,7 @@ async function loadStock() {
       if (sisa <= 0) {
         badge = '<span class="badge badge-danger"><span class="badge-dot"></span>Habis</span>';
         danger++;
-      } else if (sisa <= 10) {
+      } else if (sisa < 5) {
         badge = '<span class="badge badge-warning"><span class="badge-dot"></span>Hampir Habis</span>';
         warning++;
       } else {
