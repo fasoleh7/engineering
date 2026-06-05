@@ -113,6 +113,10 @@
         .modal-content img { width: 100%; height: auto; border-radius: 12px; margin-bottom: 15px; border: 1px solid #f1f5f9; }
         .btn-download-qris { display: flex; justify-content: center; align-items: center; gap: 8px; background-color: #2563eb; color: white; padding: 12px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 600; width: 100%; transition: background 0.2s; }
         .btn-download-qris:hover { background-color: #1d4ed8; color: white; }
+
+        /* Tombol konfirmasi khusus untuk menutup iklan setelah scan */
+        .btn-lanjutkan { display: flex; justify-content: center; align-items: center; gap: 8px; background-color: #10b981; color: white; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: 600; width: 100%; margin-top: 10px; border: none; cursor: pointer; transition: background 0.2s; }
+        .btn-lanjutkan:hover { background-color: #059669; }
     </style>
 </head>
 <body>
@@ -196,15 +200,22 @@
 
     </div>
 
+    <!-- MODAL POPUP IKLAN QRIS -->
     <div id="modal-qris" class="modal-overlay hidden">
         <div class="modal-content">
             <span class="close-modal" onclick="tutupModalQris()"><i class="fa-solid fa-xmark"></i></span>
-            <h3 style="font-size: 16px; margin-bottom: 12px; color: #1e293b;">Scan QRIS</h3>
+            <h3 id="modal-title" style="font-size: 16px; margin-bottom: 4px; color: #1e293b;">Scan QRIS</h3>
+            <p id="modal-subtitle" style="font-size: 11px; color: #64748b; margin-bottom: 12px;">Dukung Kreator untuk maintenance sistem ini 🙏</p>
             <img src="https://raw.githubusercontent.com/fasoleh7/Laporan-Harian/main/WhatsApp%20Image%202026-06-05%20at%2001.32.45.jpeg" alt="QRIS Donasi Besar">
             
-            <a href="https://raw.githubusercontent.com/fasoleh7/Laporan-Harian/main/WhatsApp%20Image%202026-06-05%20at%2001.32.45.jpeg" download="QRIS-Donasi-Kreator.jpeg" class="btn-download-qris">
+            <a href="https://raw.githubusercontent.com/fasoleh7/Laporan-Harian/main/WhatsApp%20Image%202026-06-05%20at%2001.32.45.jpeg" download="QRIS-Donasi-Kreator.jpeg" class="btn-download-qris" style="margin-bottom: 8px;">
                 <i class="fa-solid fa-download"></i> Download QRIS
             </a>
+
+            <!-- Tombol khusus yang muncul hanya setelah proses scan selesai -->
+            <button id="btn-close-ad-view" class="btn-lanjutkan hidden" onclick="tutupIklanDanTampilkanData()">
+                <i class="fa-solid fa-circle-check"></i> Lihat Laporan Mesin
+            </button>
         </div>
     </div>
 
@@ -215,6 +226,10 @@
         let dataLaporanGlobal = []; 
         let dataMasterGlobal = []; 
         let riwayatMesinAktif = []; 
+        
+        // Variable bantuan untuk menahan data teks QR sebelum iklan ditutup
+        let pendingQrText = ""; 
+        let isAdFlowActive = false;
 
         function fetchDataFromSheet() {
             Papa.parse(sheetLaporanUrl, {
@@ -236,7 +251,7 @@
             });
         }
 
-        function onScanSuccess(decodedText) { hentikanScanner(); prosesDataScan(decodedText); }
+        function onScanSuccess(decodedText) { hentikanScanner(); triggerIklanDulu(decodedText); }
         function onScanFailure() {}
 
         function mulaiScanner() {
@@ -257,7 +272,7 @@
             const inputVal = document.getElementById('manual-input').value.trim();
             if (!inputVal) return alert("Silakan masukkan ID Mesin atau No. Mesin!");
             hentikanScanner();
-            prosesDataScan(inputVal);
+            triggerIklanDulu(inputVal);
         }
 
         document.getElementById('manual-input').addEventListener('keypress', function (e) {
@@ -269,6 +284,31 @@
             const parts = tglStr.split(/[-/]/); 
             if (parts.length >= 3) return `${parts[1]} 20${parts[2]}`; 
             return "Lainnya";
+        }
+
+        // FUNGSI BARU: Menampilkan Iklan QRIS terlebih dahulu sebelum menampilkan data
+        function triggerIklanDulu(qrText) {
+            pendingQrText = qrText;
+            isAdFlowActive = true;
+
+            // Sesuaikan tampilan modal agar user tahu data sudah siap dibelakang iklan
+            document.getElementById('modal-title').innerText = "☕ Sambil Menunggu Data Laporan";
+            document.getElementById('modal-subtitle').innerText = "Jika sistem ini membantu, yuk dukung lewat QRIS creator!";
+            document.getElementById('btn-close-ad-view').classList.remove('hidden');
+
+            // Buka Popup Modal QRIS
+            bukaModalQris();
+        }
+
+        // FUNGSI BARU: Dipanggil saat tombol "Lihat Laporan Mesin" ditekan di popup iklan
+        function tutupIklanDanTampilkanData() {
+            tutupModalQris();
+            if (isAdFlowActive && pendingQrText) {
+                prosesDataScan(pendingQrText);
+                // Reset state
+                pendingQrText = "";
+                isAdFlowActive = false;
+            }
         }
 
         function prosesDataScan(qrText) {
@@ -435,13 +475,27 @@
 
         function tutupModalQris() {
             document.getElementById('modal-qris').classList.add('hidden');
+            
+            // Kembalikan ke format teks bawaan jika ditutup manual di luar proses scan
+            setTimeout(() => {
+                if (!isAdFlowActive) {
+                    document.getElementById('modal-title').innerText = "Scan QRIS";
+                    document.getElementById('modal-subtitle').innerText = "Dukung Kreator untuk maintenance sistem ini 🙏";
+                    document.getElementById('btn-close-ad-view').classList.add('hidden');
+                }
+            }, 300);
         }
 
         // Menutup modal jika klik di luar kotak (area gelap)
         window.onclick = function(event) {
             const modal = document.getElementById('modal-qris');
             if (event.target === modal) {
-                tutupModalQris();
+                // Jika sedang dalam alur scan iklan, tutup lewat fungsi khusus agar data tampil
+                if (isAdFlowActive) {
+                    tutupIklanDanTampilkanData();
+                } else {
+                    tutupModalQris();
+                }
             }
         }
 
