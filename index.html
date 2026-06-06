@@ -27,7 +27,7 @@
         * { box-sizing: border-box; font-family: 'Poppins', sans-serif; margin: 0; padding: 0; }
         body { background-color: var(--bg-color); color: var(--text-main); padding: 20px 15px; padding-bottom: 50px; }
         
-        /* CONTAINER RESPONSIF: Melebar otomatis di desktop */
+        /* CONTAINER RESPONSIF (2 Kolom di Desktop/Tab, 1 Kolom di HP) */
         .container { max-width: 500px; margin: 0 auto; transition: max-width 0.3s ease; }
 
         /* Header App */
@@ -53,7 +53,7 @@
         .input-group button { background-color: var(--primary); color: white; border: none; padding: 0 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; }
         .input-group button:hover { background-color: var(--primary-hover); }
 
-        /* Layout Pembungkus Konten Laporan */
+        /* Layout Pembungkus Konten Dashboard */
         .dashboard-layout { display: flex; flex-direction: column; gap: 20px; }
         .side-left, .side-right { width: 100%; }
 
@@ -79,7 +79,7 @@
         .timeline-item:last-child { margin-bottom: 0; }
         .timeline-dot { position: absolute; left: -25px; top: 4px; width: 12px; height: 12px; background: var(--primary); border-radius: 50%; border: 3px solid var(--card-bg); box-shadow: 0 0 0 1px var(--primary); }
         .timeline-date { font-size: 12px; color: var(--text-muted); font-weight: 500; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
-        .timeline-date-info { display: flex; gap: 12px; align-items: center; }
+        .timeline-date-info { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
         .timeline-content { background: var(--bg-color); padding: 12px 16px; border-radius: 0 12px 12px 12px; font-size: 13px; border: 1px solid rgba(0,0,0,0.03); }
         .timeline-content p { margin-bottom: 6px; line-height: 1.5; }
         .timeline-meta { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border-color); font-size: 11px; font-weight: 500; color: var(--text-muted); }
@@ -95,7 +95,7 @@
         .btn-reset { display: flex; justify-content: center; align-items: center; gap: 8px; width: 100%; padding: 14px; background-color: var(--primary); color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; margin-top: 25px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2); }
         .btn-reset:hover { background-color: var(--primary-hover); transform: translateY(-2px); }
 
-        /* Banner Iklan Bawah Opsional */
+        /* Banner Pojok Bawah Opsional */
         .qris-card { background: linear-gradient(135deg, #eff6ff, #dbeafe); border: 1px solid #bfdbfe; border-radius: 12px; padding: 15px; margin-top: 30px; position: relative; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 12px rgba(37,99,235,0.05); }
         .close-qris { position: absolute; top: 6px; right: 8px; background: transparent; border: none; color: #64748b; cursor: pointer; font-size: 14px; padding: 4px; }
         .close-qris:hover { color: #ef4444; }
@@ -253,7 +253,7 @@
 
         function onScanSuccess(decodedText) { 
             hentikanScanner(); 
-            prosesDataScan(decodedText); // Alur langsung memproses data tanpa jeda popup iklan
+            prosesDataScan(decodedText); // Langsung memproses data tanpa popup modal
         }
         
         function onScanFailure() {}
@@ -276,7 +276,7 @@
             const inputVal = document.getElementById('manual-input').value.trim();
             if (!inputVal) return alert("Silakan masukkan ID Mesin atau No. Mesin!");
             hentikanScanner();
-            prosesDataScan(inputVal); // Alur langsung memproses data
+            prosesDataScan(inputVal); // Langsung memproses data tanpa popup modal
         }
 
         document.getElementById('manual-input').addEventListener('keypress', function (e) {
@@ -400,6 +400,7 @@
                     const teknisi = cleanText(item['Nama']); 
                     const sparepart = cleanText(item['Pergantian Spare Part']); 
                     const qty = cleanText(item['QTY'] || item['Qty'] || item['qty']); 
+                    const sppm = cleanText(item['No. SPPM'] || item['No.sppm'] || item['No SPPM'] || item['SPPM'] || item['sppm']);
                     
                     let detailSparepart = '-';
                     if (sparepart !== '-') {
@@ -418,6 +419,11 @@
                         statusColor = '#92400e'; 
                     }
 
+                    let sppmBadgeHtml = '';
+                    if (sppm !== '-') {
+                        sppmBadgeHtml = `<span style="margin-left: 8px; font-weight: 600; color: var(--primary); background: #eff6ff; padding: 2px 6px; border-radius: 4px; font-size: 11px; border: 1px dashed #bfdbfe;">SPPM: ${sppm}</span>`;
+                    }
+
                     riwayatContainer.innerHTML += `
                         <div class="timeline-item">
                             <div class="timeline-dot"></div>
@@ -425,6 +431,7 @@
                                 <div class="timeline-date-info">
                                     <span><i class="fa-regular fa-calendar-days"></i> ${tanggal}</span>
                                     <span><i class="fa-regular fa-clock"></i> ${mulai} - ${selesai}</span>
+                                    ${sppmBadgeHtml}
                                 </div>
                                 <span class="status-badge" style="background-color: ${statusBg}; color: ${statusColor};">
                                     ${statusVal}
