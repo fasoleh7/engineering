@@ -27,7 +27,7 @@
         * { box-sizing: border-box; font-family: 'Poppins', sans-serif; margin: 0; padding: 0; }
         body { background-color: var(--bg-color); color: var(--text-main); padding: 20px 15px; padding-bottom: 50px; }
         
-        /* RESPONSIVE CONTAINER: Melebar otomatis di layar besar */
+        /* CONTAINER RESPONSIF: Melebar otomatis di desktop */
         .container { max-width: 500px; margin: 0 auto; transition: max-width 0.3s ease; }
 
         /* Header App */
@@ -53,11 +53,11 @@
         .input-group button { background-color: var(--primary); color: white; border: none; padding: 0 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; }
         .input-group button:hover { background-color: var(--primary-hover); }
 
-        /* Layout Pembungkus Konten Setelah Scan */
+        /* Layout Pembungkus Konten Laporan */
         .dashboard-layout { display: flex; flex-direction: column; gap: 20px; }
         .side-left, .side-right { width: 100%; }
 
-        /* Info Grid - Desain Dashboard Detail Mesin */
+        /* Info Grid - Detail Mesin */
         .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: var(--bg-color); padding: 12px; border-radius: 12px; margin-bottom: 20px; border: 1px solid rgba(0,0,0,0.04); }
         .info-box { display: flex; flex-direction: column; background: #fff; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-color); }
         .info-box.full { grid-column: span 2; }
@@ -95,10 +95,8 @@
         .btn-reset { display: flex; justify-content: center; align-items: center; gap: 8px; width: 100%; padding: 14px; background-color: var(--primary); color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; margin-top: 25px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2); }
         .btn-reset:hover { background-color: var(--primary-hover); transform: translateY(-2px); }
 
-        /* =========================================
-           STYLE IKLAN QRIS & MODAL ZOOM
-           ========================================= */
-        .qris-card { background: linear-gradient(135deg, #eff6ff, #dbeafe); border: 1px solid #bfdbfe; border-radius: 12px; padding: 15px; margin-top: 30px; position: relative; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 12px rgba(37,99,235,0.05); transition: opacity 0.3s ease; }
+        /* Banner Iklan Bawah Opsional */
+        .qris-card { background: linear-gradient(135deg, #eff6ff, #dbeafe); border: 1px solid #bfdbfe; border-radius: 12px; padding: 15px; margin-top: 30px; position: relative; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 12px rgba(37,99,235,0.05); }
         .close-qris { position: absolute; top: 6px; right: 8px; background: transparent; border: none; color: #64748b; cursor: pointer; font-size: 14px; padding: 4px; }
         .close-qris:hover { color: #ef4444; }
         .qris-text { flex: 1; }
@@ -106,47 +104,24 @@
         .qris-text h4 i { color: #d97706; }
         .qris-text p { font-size: 11px; color: #334155; line-height: 1.4; }
         .qris-image { flex-shrink: 0; }
-        .qris-image img { width: 70px; height: 70px; border-radius: 8px; object-fit: contain; border: 2px solid #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); background: #fff; cursor: zoom-in; transition: transform 0.2s; }
-        .qris-image img:hover { transform: scale(1.05); }
+        .qris-image img { width: 70px; height: 70px; border-radius: 8px; object-fit: contain; border: 2px solid #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); background: #fff; cursor: zoom-in; }
 
-        /* CSS Modal Popup untuk QRIS */
-        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.8); z-index: 1000; display: flex; justify-content: center; align-items: center; padding: 20px; opacity: 1; transition: opacity 0.3s; }
-        .modal-overlay.hidden { display: none !important; opacity: 0; }
-        .modal-content { background: white; padding: 20px; border-radius: 16px; text-align: center; position: relative; max-width: 90%; width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); animation: popIn 0.3s ease-out; }
-        @keyframes popIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        .close-modal { position: absolute; top: 12px; right: 15px; font-size: 20px; color: #94a3b8; cursor: pointer; transition: color 0.2s; }
+        /* Modal Perbesar QRIS dari Banner */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.8); z-index: 1000; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .modal-overlay.hidden { display: none !important; }
+        .modal-content { background: white; padding: 20px; border-radius: 16px; text-align: center; position: relative; max-width: 90%; width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .close-modal { position: absolute; top: 12px; right: 15px; font-size: 20px; color: #94a3b8; cursor: pointer; }
         .close-modal:hover { color: #ef4444; }
         .modal-content img { width: 100%; height: auto; border-radius: 12px; margin-bottom: 15px; border: 1px solid #f1f5f9; }
-        .btn-download-qris { display: flex; justify-content: center; align-items: center; gap: 8px; background-color: #2563eb; color: white; padding: 12px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 600; width: 100%; transition: background 0.2s; }
-        .btn-download-qris:hover { background-color: #1d4ed8; color: white; }
+        .btn-download-qris { display: flex; justify-content: center; align-items: center; gap: 8px; background-color: #2563eb; color: white; padding: 12px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 600; width: 100%; }
 
-        .btn-lanjutkan { display: flex; justify-content: center; align-items: center; gap: 8px; background-color: #10b981; color: white; padding: 12px; border-radius: 8px; font-size: 14px; font-weight: 600; width: 100%; margin-top: 10px; border: none; cursor: pointer; transition: background 0.2s; }
-        .btn-lanjutkan:hover { background-color: #059669; }
-
-        /* =======================================================
-           MEDIA QUERIES: OPTIMALISASI TABLET & DESKTOP (Layar > 768px)
-           ======================================================= */
+        /* MEDIA QUERIES DESKTOP & TABLET */
         @media screen and (min-width: 768px) {
-            .container { max-width: 1000px; } /* Perlebar container utama */
-            
-            .dashboard-layout { 
-                flex-direction: row; /* Berubah jadi bersisian kiri-kanan */
-                align-items: flex-start;
-            }
-            
-            .side-left { 
-                width: 40%; /* Spesifikasi mesin mengambil porsi 40% */
-                position: sticky;
-                top: 20px; /* Menempel di kiri saat discroll ke bawah */
-            }
-            
-            .side-right { 
-                width: 60%; /* Riwayat perbaikan mengambil porsi 60% */
-            }
-
-            .qris-card {
-                max-width: 40%; /* Menyesuaikan agar kartu iklan di bawah tidak melebar berantakan */
-            }
+            .container { max-width: 1000px; }
+            .dashboard-layout { flex-direction: row; align-items: flex-start; }
+            .side-left { width: 40%; position: sticky; top: 20px; }
+            .side-right { width: 60%; }
+            .qris-card { max-width: 40%; }
         }
     </style>
 </head>
@@ -158,7 +133,6 @@
             <p>Sistem Scanner Maintenance Brebes</p>
         </header>
 
-        <!-- KARTU UTAMA SCANNER -->
         <div id="reader-card" class="card">
             <div id="reader" style="width: 100%;"></div>
             <div class="manual-input-container">
@@ -170,10 +144,8 @@
             </div>
         </div>
 
-        <!-- STRUKTUR BARU: DASHBOARD LAYOUT (2 KOLOM DI PC/TABLET) -->
         <div id="result-card" class="dashboard-layout hidden">
             
-            <!-- KOLOM KIRI: INFO SPESIFIKASI MESIN -->
             <div class="side-left">
                 <div class="card" style="margin-bottom: 0;">
                     <h3 class="section-title" style="margin-bottom: 12px;"><i class="fa-solid fa-circle-info"></i> Spesifikasi</h3>
@@ -211,7 +183,6 @@
                 </div>
             </div>
             
-            <!-- KOLOM KANAN: TIMELINE RIWAYAT PERBAIKAN -->
             <div class="side-right">
                 <div class="card" style="margin-bottom: 0;">
                     <h3 class="section-title"><i class="fa-solid fa-clock-rotate-left"></i> Riwayat Perbaikan</h3>
@@ -229,7 +200,6 @@
 
         </div>
 
-        <!-- IKLAN BAWAH -->
         <div class="qris-card" id="qris-ad">
             <button class="close-qris" onclick="document.getElementById('qris-ad').style.display='none'" title="Tutup">
                 <i class="fa-solid fa-xmark"></i>
@@ -239,27 +209,21 @@
                 <p>Sistem ini murni hasil project iseng. Jika terbantu, boleh dong dukung lewat QRIS di samping! 🚀</p>
             </div>
             <div class="qris-image">
-                <img src="https://raw.githubusercontent.com/fasoleh7/Laporan-Harian/main/WhatsApp%20Image%202026-06-05%20at%2001.32.45.jpeg" alt="Klik untuk perbesar" title="Klik untuk perbesar QRIS" onclick="bukaModalQris()">
+                <img src="https://raw.githubusercontent.com/fasoleh7/Laporan-Harian/main/WhatsApp%20Image%202026-06-05%20at%2001.32.45.jpeg" alt="Klik untuk perbesar" title="Klik untuk perbesar" onclick="bukaModalQris()">
             </div>
         </div>
 
     </div>
 
-    <!-- MODAL POPUP IKLAN QRIS SETELAH SCAN -->
     <div id="modal-qris" class="modal-overlay hidden">
         <div class="modal-content">
             <span class="close-modal" onclick="tutupModalQris()"><i class="fa-solid fa-xmark"></i></span>
-            <h3 id="modal-title" style="font-size: 16px; margin-bottom: 4px; color: #1e293b;">Scan QRIS</h3>
-            <p id="modal-subtitle" style="font-size: 11px; color: #64748b; margin-bottom: 12px;">Dukung Kreator untuk maintenance sistem ini 🙏</p>
-            <img src="https://raw.githubusercontent.com/fasoleh7/Laporan-Harian/main/WhatsApp%20Image%202026-06-05%20at%2001.32.45.jpeg" alt="QRIS Donasi Besar">
-            
-            <a href="https://raw.githubusercontent.com/fasoleh7/Laporan-Harian/main/WhatsApp%20Image%202026-06-05%20at%2001.32.45.jpeg" download="QRIS-Donasi-Kreator.jpeg" class="btn-download-qris" style="margin-bottom: 8px;">
+            <h3 style="font-size: 16px; margin-bottom: 4px; color: #1e293b;">Scan QRIS</h3>
+            <p style="font-size: 11px; color: #64748b; margin-bottom: 12px;">Dukung Kreator untuk maintenance sistem ini 🙏</p>
+            <img src="https://raw.githubusercontent.com/fasoleh7/Laporan-Harian/main/WhatsApp%20Image%202026-06-05%20at%2001.32.45.jpeg" alt="QRIS">
+            <a href="https://raw.githubusercontent.com/fasoleh7/Laporan-Harian/main/WhatsApp%20Image%202026-06-05%20at%2001.32.45.jpeg" download="QRIS-Donasi-Kreator.jpeg" class="btn-download-qris">
                 <i class="fa-solid fa-download"></i> Download QRIS
             </a>
-
-            <button id="btn-close-ad-view" class="btn-lanjutkan hidden" onclick="tutupIklanDanTampilkanData()">
-                <i class="fa-solid fa-circle-check"></i> Lihat Laporan Mesin
-            </button>
         </div>
     </div>
 
@@ -270,31 +234,28 @@
         let dataLaporanGlobal = []; 
         let dataMasterGlobal = []; 
         let riwayatMesinAktif = []; 
-        
-        let pendingQrText = ""; 
-        let isAdFlowActive = false;
 
         function fetchDataFromSheet() {
             Papa.parse(sheetLaporanUrl, {
                 download: true,
                 header: true,
                 transformHeader: function(h) { return h.trim(); }, 
-                complete: function(results) {
-                    dataLaporanGlobal = results.data;
-                }
+                complete: function(results) { dataLaporanGlobal = results.data; }
             });
 
             Papa.parse(sheetMasterMesinUrl, {
                 download: true,
                 header: true,
                 transformHeader: function(h) { return h.trim(); }, 
-                complete: function(results) {
-                    dataMasterGlobal = results.data;
-                }
+                complete: function(results) { dataMasterGlobal = results.data; }
             });
         }
 
-        function onScanSuccess(decodedText) { hentikanScanner(); triggerIklanDulu(decodedText); }
+        function onScanSuccess(decodedText) { 
+            hentikanScanner(); 
+            prosesDataScan(decodedText); // Alur langsung memproses data tanpa jeda popup iklan
+        }
+        
         function onScanFailure() {}
 
         function mulaiScanner() {
@@ -315,7 +276,7 @@
             const inputVal = document.getElementById('manual-input').value.trim();
             if (!inputVal) return alert("Silakan masukkan ID Mesin atau No. Mesin!");
             hentikanScanner();
-            triggerIklanDulu(inputVal);
+            prosesDataScan(inputVal); // Alur langsung memproses data
         }
 
         document.getElementById('manual-input').addEventListener('keypress', function (e) {
@@ -327,26 +288,6 @@
             const parts = tglStr.split(/[-/]/); 
             if (parts.length >= 3) return `${parts[1]} 20${parts[2]}`; 
             return "Lainnya";
-        }
-
-        function triggerIklanDulu(qrText) {
-            pendingQrText = qrText;
-            isAdFlowActive = true;
-
-            document.getElementById('modal-title').innerText = "☕ Sambil Menunggu Data Laporan";
-            document.getElementById('modal-subtitle').innerText = "Jika sistem ini membantu, yuk dukung lewat QRIS creator!";
-            document.getElementById('btn-close-ad-view').classList.remove('hidden');
-
-            bukaModalQris();
-        }
-
-        function tutupIklanDanTampilkanData() {
-            tutupModalQris();
-            if (isAdFlowActive && pendingQrText) {
-                prosesDataScan(pendingQrText);
-                pendingQrText = "";
-                isAdFlowActive = false;
-            }
         }
 
         function prosesDataScan(qrText) {
@@ -457,7 +398,6 @@
                     const kendala = cleanText(item['Problem Mesin']);
                     const tindakan = cleanText(item['Perbaikan Mesin']);
                     const teknisi = cleanText(item['Nama']); 
-                    
                     const sparepart = cleanText(item['Pergantian Spare Part']); 
                     const qty = cleanText(item['QTY'] || item['Qty'] || item['qty']); 
                     
@@ -506,35 +446,15 @@
             }
         }
 
-        function bukaModalQris() {
-            document.getElementById('modal-qris').classList.remove('hidden');
-        }
-
-        function tutupModalQris() {
-            document.getElementById('modal-qris').classList.add('hidden');
-            setTimeout(() => {
-                if (!isAdFlowActive) {
-                    document.getElementById('modal-title').innerText = "Scan QRIS";
-                    document.getElementById('modal-subtitle').innerText = "Dukung Kreator untuk maintenance sistem ini 🙏";
-                    document.getElementById('btn-close-ad-view').classList.add('hidden');
-                }
-            }, 300);
-        }
+        function bukaModalQris() { document.getElementById('modal-qris').classList.remove('hidden'); }
+        function tutupModalQris() { document.getElementById('modal-qris').classList.add('hidden'); }
 
         window.onclick = function(event) {
             const modal = document.getElementById('modal-qris');
-            if (event.target === modal) {
-                if (isAdFlowActive) {
-                    tutupIklanDanTampilkanData();
-                } else {
-                    tutupModalQris();
-                }
-            }
+            if (event.target === modal) tutupModalQris();
         }
 
-        function resetScanner() {
-            mulaiScanner();
-        }
+        function resetScanner() { mulaiScanner(); }
 
         window.onload = () => {
             fetchDataFromSheet();
