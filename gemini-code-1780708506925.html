@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sistem Laporan Mesin Brebes</title>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #1e293b;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --success: #10b981;
+        }
+
+        * { box-sizing: border-box; font-family: 'Poppins', sans-serif; margin: 0; padding: 0; }
+        body { background-color: var(--bg-color); color: var(--text-main); padding: 20px 15px; padding-bottom: 50px; }
+        
+        /* CONTAINER RESPONSIF: Melebar otomatis di desktop */
+        .container { max-width: 500px; margin: 0 auto; transition: max-width 0.3s ease; }
+
+        /* Header App */
+        .app-header { text-align: center; margin-bottom: 24px; }
+        .app-header h2 { font-size: 22px; font-weight: 700; color: var(--primary); display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .app-header p { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+
+        /* Card Style */
+        .card { background: var(--card-bg); border-radius: 16px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05); padding: 24px; margin-bottom: 20px; border: 1px solid rgba(0,0,0,0.02); }
+        .hidden { display: none !important; }
+
+        /* Scanner */
+        #reader { border-radius: 12px; overflow: hidden; border: none !important; }
+        #reader__dashboard_section_csr span { font-family: 'Poppins', sans-serif !important; }
+        #reader button { background-color: var(--primary); color: white; border: none; padding: 8px 16px; border-radius: 8px; font-family: 'Poppins', sans-serif; cursor: pointer; margin-top: 10px; }
+
+        /* Manual Input */
+        .manual-input-container { margin-top: 20px; padding-top: 20px; border-top: 1px dashed var(--border-color); }
+        .manual-input-label { font-size: 13px; color: var(--text-muted); margin-bottom: 10px; text-align: center; }
+        .input-group { display: flex; gap: 10px; }
+        .input-group input { flex: 1; padding: 12px 16px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 14px; outline: none; transition: border-color 0.2s; text-transform: uppercase;}
+        .input-group input:focus { border-color: var(--primary); }
+        .input-group button { background-color: var(--primary); color: white; border: none; padding: 0 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .input-group button:hover { background-color: var(--primary-hover); }
+
+        /* Layout Pembungkus Konten Laporan */
+        .dashboard-layout { display: flex; flex-direction: column; gap: 20px; }
+        .side-left, .side-right { width: 100%; }
+
+        /* Info Grid - Detail Mesin */
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; background: var(--bg-color); padding: 12px; border-radius: 12px; margin-bottom: 20px; border: 1px solid rgba(0,0,0,0.04); }
+        .info-box { display: flex; flex-direction: column; background: #fff; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border-color); }
+        .info-box.full { grid-column: span 2; }
+        .info-label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 3px; }
+        .info-value { font-size: 14px; font-weight: 700; color: var(--primary); word-break: break-word; }
+
+        /* Filter Section */
+        .filter-wrapper { display: flex; align-items: center; justify-content: space-between; background: var(--bg-color); padding: 12px 15px; border-radius: 10px; margin-bottom: 20px; border: 1px solid var(--border-color);}
+        .filter-wrapper label { font-size: 13px; font-weight: 600; color: var(--text-main); display: flex; align-items: center; gap: 6px;}
+        .filter-wrapper select { flex: 1; margin-left: 15px; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 6px; font-family: 'Poppins', sans-serif; font-size: 13px; font-weight: 500; outline: none; cursor: pointer; background: white;}
+        .filter-wrapper select:focus { border-color: var(--primary); }
+
+        h3.section-title { font-size: 16px; font-weight: 600; margin-bottom: 16px; border-bottom: 2px solid var(--bg-color); padding-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+
+        /* Timeline Riwayat */
+        .timeline { position: relative; padding-left: 20px; }
+        .timeline::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: var(--border-color); border-radius: 2px; }
+        .timeline-item { position: relative; margin-bottom: 24px; }
+        .timeline-item:last-child { margin-bottom: 0; }
+        .timeline-dot { position: absolute; left: -25px; top: 4px; width: 12px; height: 12px; background: var(--primary); border-radius: 50%; border: 3px solid var(--card-bg); box-shadow: 0 0 0 1px var(--primary); }
+        .timeline-date { font-size: 12px; color: var(--text-muted); font-weight: 500; margin-bottom: 6px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+        .timeline-date-info { display: flex; gap: 12px; align-items: center; }
+        .timeline-content { background: var(--bg-color); padding: 12px 16px; border-radius: 0 12px 12px 12px; font-size: 13px; border: 1px solid rgba(0,0,0,0.03); }
+        .timeline-content p { margin-bottom: 6px; line-height: 1.5; }
+        .timeline-meta { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed var(--border-color); font-size: 11px; font-weight: 500; color: var(--text-muted); }
+        .meta-item i { color: var(--primary); margin-right: 4px; }
+
+        /* Badge Status */
+        .status-badge { padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* Pesan Kosong */
+        .empty-state { text-align: center; color: var(--text-muted); font-size: 13px; margin-top: 15px; padding: 20px; background: var(--bg-color); border-radius: 8px;}
+
+        /* Buttons */
+        .btn-reset { display: flex; justify-content: center; align-items: center; gap: 8px; width: 100%; padding: 14px; background-color: var(--primary); color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; margin-top: 25px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2); }
+        .btn-reset:hover { background-color: var(--primary-hover); transform: translateY(-2px); }
+
+        /* Banner Iklan Bawah Opsional */
+        .qris-card { background: linear-gradient(135deg, #eff6ff, #dbeafe); border: 1px solid #bfdbfe; border-radius: 12px; padding: 15px; margin-top: 30px; position: relative; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 12px rgba(37,99,235,0.05); }
+        .close-qris { position: absolute; top: 6px; right: 8px; background: transparent; border: none; color: #64748b; cursor: pointer; font-size: 14px; padding: 4px; }
+        .close-qris:hover { color: #ef4444; }
+        .qris-text { flex: 1; }
+        .qris-text h4 { font-size: 13px; font-weight: 700; color: #1e3a8a; margin-bottom: 4px; display: flex; align-items: center; gap: 6px; }
+        .qris-text h4 i { color: #d97706; }
+        .qris-text p { font-size: 11px; color: #334155; line-height: 1.4; }
+        .qris-image { flex-shrink: 0; }
+        .qris-image img { width: 70px; height: 70px; border-radius: 8px; object-fit: contain; border: 2px solid #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); background: #fff; cursor: zoom-in; }
+
+        /* Modal Perbesar QRIS dari Banner */
+        .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.8); z-index: 1000; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .modal-overlay.hidden { display: none !important; }
+        .modal-content { background: white; padding: 20px; border-radius: 16px; text-align: center; position: relative; max-width: 90%; width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .close-modal { position: absolute; top: 12px; right: 15px; font-size: 20px; color: #94a3b8; cursor: pointer; }
+        .close-modal:hover { color: #ef4444; }
+        .modal-content img { width: 100%; height: auto; border-radius: 12px; margin-bottom: 15px; border: 1px solid #f1f5f9; }
+        .btn-download-qris { display: flex; justify-content: center; align-items: center; gap: 8px; background-color: #2563eb; color: white; padding: 12px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 600; width: 100%; }
+
+        /* MEDIA QUERIES DESKTOP & TABLET */
+        @media screen and (min-width: 768px) {
+            .container { max-width: 1000px; }
+            .dashboard-layout { flex-direction: row; align-items: flex-start; }
+            .side-left { width: 40%; position: sticky; top: 20px; }
+            .side-right { width: 60%; }
+            .qris-card { max-width: 40%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header class="app-header">
+            <h2><i class="fa-solid fa-qrcode"></i> Laporan Mesin</h2>
+            <p>Sistem Scanner Maintenance Brebes</p>
+        </header>
+
+        <div id="reader-card" class="card">
+            <div id="reader" style="width: 100%;"></div>
+            <div class="manual-input-container">
+                <p class="manual-input-label">Ketik ID Mesin atau Kode Mesin Lama/Baru:</p>
+                <div class="input-group">
+                    <input type="text" id="manual-input" placeholder="Contoh: P-070 atau C02" autocomplete="off">
+                    <button onclick="cariManual()"><i class="fa-solid fa-magnifying-glass"></i> Cari</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="result-card" class="dashboard-layout hidden">
+            
+            <div class="side-left">
+                <div class="card" style="margin-bottom: 0;">
+                    <h3 class="section-title" style="margin-bottom: 12px;"><i class="fa-solid fa-circle-info"></i> Spesifikasi</h3>
+                    
+                    <div class="info-grid">
+                        <div class="info-box">
+                            <span class="info-label">ID Lokasi</span>
+                            <span class="info-value" id="res-id-lokasi">-</span>
+                        </div>
+                        <div class="info-box">
+                            <span class="info-label">Kode Mesin</span>
+                            <span class="info-value" id="res-no-mesin">-</span>
+                        </div>
+                        <div class="info-box full">
+                            <span class="info-label">Nama Mesin</span>
+                            <span class="info-value" id="res-nama">-</span>
+                        </div>
+                        <div class="info-box">
+                            <span class="info-label">Tonase</span>
+                            <span class="info-value" id="res-tonase">-</span>
+                        </div>
+                        <div class="info-box">
+                            <span class="info-label">Serial Number</span>
+                            <span class="info-value" id="res-sn">-</span>
+                        </div>
+                        <div class="info-box full">
+                            <span class="info-label">Spesifikasi Detail</span>
+                            <span class="info-value" id="res-spesifikasi">-</span>
+                        </div>
+                    </div>
+
+                    <button onclick="resetScanner()" class="btn-reset" style="margin-top: 10px;">
+                        <i class="fa-solid fa-camera"></i> Scan Lainnya
+                    </button>
+                </div>
+            </div>
+            
+            <div class="side-right">
+                <div class="card" style="margin-bottom: 0;">
+                    <h3 class="section-title"><i class="fa-solid fa-clock-rotate-left"></i> Riwayat Perbaikan</h3>
+                    
+                    <div id="filter-container" class="filter-wrapper hidden">
+                        <label for="month-filter"><i class="fa-solid fa-filter"></i> Bulan:</label>
+                        <select id="month-filter" onchange="terapkanFilterBulan()">
+                            <option value="all">Semua Riwayat</option>
+                        </select>
+                    </div>
+
+                    <div class="timeline" id="res-riwayat"></div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="qris-card" id="qris-ad">
+            <button class="close-qris" onclick="document.getElementById('qris-ad').style.display='none'" title="Tutup">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="qris-text">
+                <h4><i class="fa-solid fa-mug-hot"></i> Traktir Kopi Kreator</h4>
+                <p>Sistem ini murni hasil project iseng. Jika terbantu, boleh dong dukung lewat QRIS di samping! 🚀</p>
+            </div>
+            <div class="qris-image">
+                <img src="https://raw.githubusercontent.com/fasoleh7/Laporan-Harian/main/WhatsApp%20Image%202026-06-05%20at%2001.32.45.jpeg" alt="Klik untuk perbesar" title="Klik untuk perbesar" onclick="bukaModalQris()">
+            </div>
+        </div>
+
+    </div>
+
+    <div id="modal-qris" class="modal-overlay hidden">
+        <div class="modal-content">
+            <span class="close-modal" onclick="tutupModalQris()"><i class="fa-solid fa-xmark"></i></span>
+            <h3 style="font-size: 16px; margin-bottom: 4px; color: #1e293b;">Scan QRIS</h3>
+            <p style="font-size: 11px; color: #64748b; margin-bottom: 12px;">Dukung Kreator untuk maintenance sistem ini 🙏</p>
+            <img src="https://raw.githubusercontent.com/fasoleh7/Laporan-Harian/main/WhatsApp%20Image%202026-06-05%20at%2001.32.45.jpeg" alt="QRIS">
+            <a href="https://raw.githubusercontent.com/fasoleh7/Laporan-Harian/main/WhatsApp%20Image%202026-06-05%20at%2001.32.45.jpeg" download="QRIS-Donasi-Kreator.jpeg" class="btn-download-qris">
+                <i class="fa-solid fa-download"></i> Download QRIS
+            </a>
+        </div>
+    </div>
+
+    <script>
+        const sheetLaporanUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSVlWdigQ3QRSQbpDRWUh43arMq2wPvtJHVyiJAaqI9m7fSxRR9ilJaJpKuBLVoUqRsRHU1O6UFSTMC/pub?gid=1993292819&single=true&output=csv";
+        const sheetMasterMesinUrl = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSVlWdigQ3QRSQbpDRWUh43arMq2wPvtJHVyiJAaqI9m7fSxRR9ilJaJpKuBLVoUqRsRHU1O6UFSTMC/pub?gid=94982066&single=true&output=csv";
+
+        let dataLaporanGlobal = []; 
+        let dataMasterGlobal = []; 
+        let riwayatMesinAktif = []; 
+
+        function fetchDataFromSheet() {
+            Papa.parse(sheetLaporanUrl, {
+                download: true,
+                header: true,
+                transformHeader: function(h) { return h.trim(); }, 
+                complete: function(results) { dataLaporanGlobal = results.data; }
+            });
+
+            Papa.parse(sheetMasterMesinUrl, {
+                download: true,
+                header: true,
+                transformHeader: function(h) { return h.trim(); }, 
+                complete: function(results) { dataMasterGlobal = results.data; }
+            });
+        }
+
+        function onScanSuccess(decodedText) { 
+            hentikanScanner(); 
+            prosesDataScan(decodedText); // Alur langsung memproses data tanpa jeda popup iklan
+        }
+        
+        function onScanFailure() {}
+
+        function mulaiScanner() {
+            document.getElementById('reader-card').classList.remove('hidden');
+            document.getElementById('result-card').classList.add('hidden');
+            document.getElementById('manual-input').value = ''; 
+            
+            html5QrcodeScanner = new Html5QrcodeScanner("reader", { fps: 10, qrbox: {width: 250, height: 250} }, false);
+            html5QrcodeScanner.render(onScanSuccess, onScanFailure);
+        }
+
+        function hentikanScanner() {
+            document.getElementById('reader-card').classList.add('hidden');
+            try { if(html5QrcodeScanner) html5QrcodeScanner.clear(); } catch (e) { }
+        }
+
+        function cariManual() {
+            const inputVal = document.getElementById('manual-input').value.trim();
+            if (!inputVal) return alert("Silakan masukkan ID Mesin atau No. Mesin!");
+            hentikanScanner();
+            prosesDataScan(inputVal); // Alur langsung memproses data
+        }
+
+        document.getElementById('manual-input').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') cariManual();
+        });
+
+        function getBulanTahun(tglStr) {
+            if (!tglStr) return "Lainnya";
+            const parts = tglStr.split(/[-/]/); 
+            if (parts.length >= 3) return `${parts[1]} 20${parts[2]}`; 
+            return "Lainnya";
+        }
+
+        function prosesDataScan(qrText) {
+            const searchText = qrText.trim().toUpperCase();
+            const cleanText = (text) => (!text || text.trim() === '') ? '-' : text;
+
+            let infoMaster = null;
+            if (dataMasterGlobal.length > 0) {
+                infoMaster = dataMasterGlobal.find(row => {
+                    const idLokasi = row['ID Lokasi'] ? row['ID Lokasi'].trim().toUpperCase() : '';
+                    const lama = row['Lama'] ? row['Lama'].trim().toUpperCase() : '';
+                    const baru = row['Baru'] ? row['Baru'].trim().toUpperCase() : '';
+                    return (idLokasi === searchText) || (lama === searchText) || (baru === searchText);
+                });
+            }
+
+            const riwayatMentah = dataLaporanGlobal.filter(row => {
+                const idMesin = row['ID Mesin'] ? row['ID Mesin'].trim().toUpperCase() : '';
+                const noMesin = row['No. Mesin'] ? row['No. Mesin'].trim().toUpperCase() : '';
+                return (idMesin === searchText) || (noMesin === searchText);
+            });
+
+            if (!infoMaster && riwayatMentah.length === 0) {
+                alert(`Data tidak ditemukan! Kode ${searchText} belum terdaftar di Sistem.`);
+                resetScanner();
+                return;
+            }
+
+            if (infoMaster) {
+                document.getElementById('res-id-lokasi').innerText = cleanText(infoMaster['ID Lokasi']);
+                document.getElementById('res-no-mesin').innerText = cleanText(infoMaster['Baru']);
+                document.getElementById('res-nama').innerText = cleanText(infoMaster['Nama Mesin']);
+                document.getElementById('res-tonase').innerText = cleanText(infoMaster['Tonase']);
+                const serialNum = infoMaster['Serial Number'] || infoMaster['SN'] || '-';
+                document.getElementById('res-sn').innerText = cleanText(serialNum);
+                document.getElementById('res-spesifikasi').innerText = cleanText(infoMaster['Spesifikasi']);
+            } else {
+                document.getElementById('res-id-lokasi').innerText = cleanText(riwayatMentah[0]['ID Mesin']);
+                document.getElementById('res-no-mesin').innerText = cleanText(riwayatMentah[0]['No. Mesin']);
+                document.getElementById('res-nama').innerText = cleanText(riwayatMentah[0]['Nama Mesin']);
+                document.getElementById('res-tonase').innerText = '-';
+                document.getElementById('res-spesifikasi').innerText = '-';
+                document.getElementById('res-sn').innerText = '-';
+            }
+
+            riwayatMesinAktif = riwayatMentah.filter(item => {
+                const problem = item['Problem Mesin'] ? item['Problem Mesin'].toUpperCase() : '';
+                const tanggal = item['Tanggal'] ? item['Tanggal'].toUpperCase() : '';
+                if (problem.includes('#N/A') || problem.includes('#REF') || tanggal.includes('#N/A') || problem === '' || tanggal === '') {
+                    return false;
+                }
+                item._grupBulan = getBulanTahun(item['Tanggal']);
+                return true;
+            });
+
+            setupFilterBulan(riwayatMesinAktif);
+            renderTimeline(riwayatMesinAktif);
+
+            document.getElementById('result-card').classList.remove('hidden');
+        }
+
+        function setupFilterBulan(data) {
+            const filterContainer = document.getElementById('filter-container');
+            const selectFilter = document.getElementById('month-filter');
+            selectFilter.innerHTML = '<option value="all">Semua Riwayat</option>'; 
+
+            if (data.length === 0) {
+                filterContainer.classList.add('hidden');
+                return;
+            }
+
+            let bulanUnik = new Set();
+            data.forEach(item => bulanUnik.add(item._grupBulan));
+
+            if (bulanUnik.size > 0) {
+                bulanUnik.forEach(bulan => {
+                    let opt = document.createElement('option');
+                    opt.value = bulan;
+                    opt.textContent = bulan;
+                    selectFilter.appendChild(opt);
+                });
+                filterContainer.classList.remove('hidden');
+            } else {
+                filterContainer.classList.add('hidden');
+            }
+        }
+
+        function terapkanFilterBulan() {
+            const filterValue = document.getElementById('month-filter').value;
+            if (filterValue === 'all') {
+                renderTimeline(riwayatMesinAktif);
+            } else {
+                const dataTersaring = riwayatMesinAktif.filter(item => item._grupBulan === filterValue);
+                renderTimeline(dataTersaring);
+            }
+        }
+
+        function renderTimeline(dataUntukDitampilkan) {
+            const riwayatContainer = document.getElementById('res-riwayat');
+            riwayatContainer.innerHTML = ''; 
+            const cleanText = (text) => (!text || text.trim() === '') ? '-' : text;
+
+            if (dataUntukDitampilkan.length > 0) {
+                dataUntukDitampilkan.forEach(item => {
+                    const tanggal = cleanText(item['Tanggal']);
+                    const mulai = cleanText(item['Mulai']);
+                    const selesai = cleanText(item['Selesai']);
+                    const kendala = cleanText(item['Problem Mesin']);
+                    const tindakan = cleanText(item['Perbaikan Mesin']);
+                    const teknisi = cleanText(item['Nama']); 
+                    const sparepart = cleanText(item['Pergantian Spare Part']); 
+                    const qty = cleanText(item['QTY'] || item['Qty'] || item['qty']); 
+                    
+                    let detailSparepart = '-';
+                    if (sparepart !== '-') {
+                        detailSparepart = qty !== '-' ? `${sparepart} (QTY: ${qty})` : sparepart;
+                    }
+                    
+                    const statusVal = cleanText(item['Status'] || item['Statur']);
+                    let statusBg = '#f1f5f9'; 
+                    let statusColor = '#475569';
+                    
+                    if (statusVal.toUpperCase() === 'OK') {
+                        statusBg = '#d1fae5'; 
+                        statusColor = '#065f46'; 
+                    } else if (statusVal !== '-') {
+                        statusBg = '#fef3c7'; 
+                        statusColor = '#92400e'; 
+                    }
+
+                    riwayatContainer.innerHTML += `
+                        <div class="timeline-item">
+                            <div class="timeline-dot"></div>
+                            <div class="timeline-date">
+                                <div class="timeline-date-info">
+                                    <span><i class="fa-regular fa-calendar-days"></i> ${tanggal}</span>
+                                    <span><i class="fa-regular fa-clock"></i> ${mulai} - ${selesai}</span>
+                                </div>
+                                <span class="status-badge" style="background-color: ${statusBg}; color: ${statusColor};">
+                                    ${statusVal}
+                                </span>
+                            </div>
+                            <div class="timeline-content">
+                                <p><strong>Kendala:</strong> ${kendala}</p>
+                                <p><strong>Tindakan:</strong> ${tindakan}</p>
+                                <div class="timeline-meta">
+                                    <div class="meta-item"><i class="fa-solid fa-user-wrench"></i> ${teknisi}</div>
+                                    <div class="meta-item"><i class="fa-solid fa-gear"></i> ${detailSparepart}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                riwayatContainer.innerHTML = '<div class="empty-state"><i class="fa-solid fa-folder-open" style="font-size: 24px; color: #cbd5e1; margin-bottom: 8px; display: block;"></i>Belum ada riwayat perbaikan yang tercatat untuk mesin ini.</div>';
+            }
+        }
+
+        function bukaModalQris() { document.getElementById('modal-qris').classList.remove('hidden'); }
+        function tutupModalQris() { document.getElementById('modal-qris').classList.add('hidden'); }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('modal-qris');
+            if (event.target === modal) tutupModalQris();
+        }
+
+        function resetScanner() { mulaiScanner(); }
+
+        window.onload = () => {
+            fetchDataFromSheet();
+            mulaiScanner();
+        };
+    </script>
+</body>
+</html>
