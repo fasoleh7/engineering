@@ -6,7 +6,6 @@
     <title>Sistem Laporan Mesin Brebes</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
     <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -27,7 +26,7 @@
         * { box-sizing: border-box; font-family: 'Poppins', sans-serif; margin: 0; padding: 0; }
         body { background-color: var(--bg-color); color: var(--text-main); padding: 20px 15px; padding-bottom: 50px; }
         
-        /* CONTAINER RESPONSIF (2 Kolom di Desktop/Tab, 1 Kolom di HP) */
+        /* CONTAINER RESPONSIF */
         .container { max-width: 500px; margin: 0 auto; transition: max-width 0.3s ease; }
 
         /* Header App */
@@ -95,7 +94,7 @@
         .btn-reset { display: flex; justify-content: center; align-items: center; gap: 8px; width: 100%; padding: 14px; background-color: var(--primary); color: white; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; margin-top: 25px; cursor: pointer; transition: all 0.2s; box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2); }
         .btn-reset:hover { background-color: var(--primary-hover); transform: translateY(-2px); }
 
-        /* Banner Pojok Bawah Opsional */
+        /* Banner QRIS */
         .qris-card { background: linear-gradient(135deg, #eff6ff, #dbeafe); border: 1px solid #bfdbfe; border-radius: 12px; padding: 15px; margin-top: 30px; position: relative; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 12px rgba(37,99,235,0.05); }
         .close-qris { position: absolute; top: 6px; right: 8px; background: transparent; border: none; color: #64748b; cursor: pointer; font-size: 14px; padding: 4px; }
         .close-qris:hover { color: #ef4444; }
@@ -106,7 +105,7 @@
         .qris-image { flex-shrink: 0; }
         .qris-image img { width: 70px; height: 70px; border-radius: 8px; object-fit: contain; border: 2px solid #ffffff; box-shadow: 0 2px 8px rgba(0,0,0,0.1); background: #fff; cursor: zoom-in; }
 
-        /* Modal Perbesar QRIS dari Banner */
+        /* Modal QRIS */
         .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.8); z-index: 1000; display: flex; justify-content: center; align-items: center; padding: 20px; }
         .modal-overlay.hidden { display: none !important; }
         .modal-content { background: white; padding: 20px; border-radius: 16px; text-align: center; position: relative; max-width: 90%; width: 320px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
@@ -115,7 +114,6 @@
         .modal-content img { width: 100%; height: auto; border-radius: 12px; margin-bottom: 15px; border: 1px solid #f1f5f9; }
         .btn-download-qris { display: flex; justify-content: center; align-items: center; gap: 8px; background-color: #2563eb; color: white; padding: 12px; border-radius: 8px; text-decoration: none; font-size: 14px; font-weight: 600; width: 100%; }
 
-        /* MEDIA QUERIES DESKTOP & TABLET */
         @media screen and (min-width: 768px) {
             .container { max-width: 1000px; }
             .dashboard-layout { flex-direction: row; align-items: flex-start; }
@@ -136,9 +134,9 @@
         <div id="reader-card" class="card">
             <div id="reader" style="width: 100%;"></div>
             <div class="manual-input-container">
-                <p class="manual-input-label">Ketik ID Mesin atau Kode Mesin Lama/Baru:</p>
+                <p class="manual-input-label">Ketik ID Mesin atau Kode Mesin Baru:</p>
                 <div class="input-group">
-                    <input type="text" id="manual-input" placeholder="Contoh: P-070 atau C02" autocomplete="off">
+                    <input type="text" id="manual-input" placeholder="Contoh: P-076 atau D18" autocomplete="off">
                     <button onclick="cariManual()"><i class="fa-solid fa-magnifying-glass"></i> Cari</button>
                 </div>
             </div>
@@ -234,66 +232,79 @@
         let dataLaporanGlobal = []; 
         let dataMasterGlobal = []; 
         let riwayatMesinAktif = []; 
+        let html5QrcodeScanner = null;
+
+        function normalizeText(text) {
+            return text ? text.toString().toUpperCase().replace(/[^A-Z0-9]/g, '') : '';
+        }
+
+        function getColValue(row, possibleNames) {
+            if (!row) return '';
+            const keys = Object.keys(row);
+            for (let name of possibleNames) {
+                const targetNorm = normalizeText(name);
+                const foundKey = keys.find(k => normalizeText(k) === targetNorm);
+                if (foundKey && row[foundKey] !== undefined && row[foundKey] !== null) {
+                    const val = row[foundKey].toString().trim();
+                    if (val !== '' && val !== 'nan' && val !== 'undefined') return val;
+                }
+            }
+            return '';
+        }
 
         function fetchDataFromSheet() {
-    // 1. Ambil Data Laporan
-    Papa.parse(sheetLaporanUrl, {
-        download: true,
-        header: false, // Dibaca sebagai array 2D agar kita bisa cari baris header sendiri
-        complete: function(results) {
-            const rawRows = results.data;
-            if (!rawRows || rawRows.length === 0) return;
+            Papa.parse(sheetLaporanUrl, {
+                download: true,
+                header: false,
+                complete: function(results) { 
+                    const rawRows = results.data;
+                    if (!rawRows || rawRows.length === 0) return;
 
-            // Cari indeks baris yang berisi kata 'Tanggal' atau 'ID Mesin' (Header)
-            let headerIndex = rawRows.findIndex(row => 
-                row.some(cell => cell && (cell.toString().trim() === 'Tanggal' || cell.toString().trim() === 'ID Mesin'))
-            );
+                    let headerIndex = rawRows.findIndex(row => 
+                        row.some(cell => cell && (normalizeText(cell) === 'TANGGAL' || normalizeText(cell) === 'IDMESIN' || normalizeText(cell) === 'NOMESIN'))
+                    );
 
-            if (headerIndex === -1) headerIndex = 0; // Fallback jika tidak ditemukan
+                    if (headerIndex === -1) headerIndex = 0;
+                    const headers = rawRows[headerIndex].map(h => h ? h.toString().trim() : '');
+                    
+                    dataLaporanGlobal = rawRows.slice(headerIndex + 1).map(row => {
+                        let obj = {};
+                        headers.forEach((h, i) => {
+                            if (h) obj[h] = row[i] ? row[i].toString().trim() : '';
+                        });
+                        return obj;
+                    }).filter(obj => Object.values(obj).some(val => val !== ''));
+                }
+            });
 
-            const headers = rawRows[headerIndex].map(h => h ? h.toString().trim() : '');
-            
-            // Konversi baris di bawah header menjadi objek JSON
-            dataLaporanGlobal = rawRows.slice(headerIndex + 1).map(row => {
-                let obj = {};
-                headers.forEach((h, i) => {
-                    if (h) obj[h] = row[i] ? row[i].toString().trim() : '';
-                });
-                return obj;
-            }).filter(obj => Object.values(obj).some(val => val !== ''));
+            Papa.parse(sheetMasterMesinUrl, {
+                download: true,
+                header: false,
+                complete: function(results) { 
+                    const rawRows = results.data;
+                    if (!rawRows || rawRows.length === 0) return;
+
+                    let headerIndex = rawRows.findIndex(row => 
+                        row.some(cell => cell && (normalizeText(cell).includes('LOKASI') || normalizeText(cell) === 'BARU'))
+                    );
+
+                    if (headerIndex === -1) headerIndex = 0;
+                    const headers = rawRows[headerIndex].map(h => h ? h.toString().trim() : '');
+
+                    dataMasterGlobal = rawRows.slice(headerIndex + 1).map(row => {
+                        let obj = {};
+                        headers.forEach((h, i) => {
+                            if (h) obj[h] = row[i] ? row[i].toString().trim() : '';
+                        });
+                        return obj;
+                    }).filter(obj => Object.values(obj).some(val => val !== ''));
+                }
+            });
         }
-    });
-
-    // 2. Ambil Data Master Mesin
-    Papa.parse(sheetMasterMesinUrl, {
-        download: true,
-        header: false,
-        complete: function(results) {
-            const rawRows = results.data;
-            if (!rawRows || rawRows.length === 0) return;
-
-            let headerIndex = rawRows.findIndex(row => 
-                row.some(cell => cell && (cell.toString().trim().toUpperCase().includes('LOKASI') || cell.toString().trim().toUpperCase().includes('BARU')))
-            );
-
-            if (headerIndex === -1) headerIndex = 0;
-
-            const headers = rawRows[headerIndex].map(h => h ? h.toString().trim() : '');
-
-            dataMasterGlobal = rawRows.slice(headerIndex + 1).map(row => {
-                let obj = {};
-                headers.forEach((h, i) => {
-                    if (h) obj[h] = row[i] ? row[i].toString().trim() : '';
-                });
-                return obj;
-            }).filter(obj => Object.values(obj).some(val => val !== ''));
-        }
-    });
-}
 
         function onScanSuccess(decodedText) { 
             hentikanScanner(); 
-            prosesDataScan(decodedText); // Langsung memproses data tanpa popup modal
+            prosesDataScan(decodedText);
         }
         
         function onScanFailure() {}
@@ -316,7 +327,7 @@
             const inputVal = document.getElementById('manual-input').value.trim();
             if (!inputVal) return alert("Silakan masukkan ID Mesin atau No. Mesin!");
             hentikanScanner();
-            prosesDataScan(inputVal); // Langsung memproses data tanpa popup modal
+            prosesDataScan(inputVal);
         }
 
         document.getElementById('manual-input').addEventListener('keypress', function (e) {
@@ -331,96 +342,74 @@
         }
 
         function prosesDataScan(qrText) {
-    const rawSearch = qrText.trim().toUpperCase();
-    const normalize = (text) => text ? text.toString().toUpperCase().replace(/[^A-Z0-9]/g, '') : '';
-    const searchNormalized = normalize(rawSearch);
+            const rawSearch = qrText.trim().toUpperCase();
+            const searchNormalized = normalizeText(rawSearch);
+            const cleanText = (text) => (!text || text.trim() === '' || text.trim() === 'nan') ? '-' : text;
 
-    const cleanText = (text) => (!text || text.trim() === '') ? '-' : text;
-
-    // Helper pembaca kolom toleran
-    const getColValue = (row, possibleNames) => {
-        if (!row) return '';
-        const keys = Object.keys(row);
-        for (let name of possibleNames) {
-            const targetNorm = normalize(name);
-            const foundKey = keys.find(k => normalize(k) === targetNorm);
-            if (foundKey && row[foundKey] !== undefined && row[foundKey] !== null) {
-                return row[foundKey].toString().trim();
+            let infoMaster = null;
+            if (dataMasterGlobal.length > 0) {
+                infoMaster = dataMasterGlobal.find(row => {
+                    const idLokasi = normalizeText(getColValue(row, ['ID Lokasi', 'IDLokasi', 'Lokasi']));
+                    const baru = normalizeText(getColValue(row, ['Baru', 'Kode Baru', 'No Mesin Baru']));
+                    return (idLokasi === searchNormalized) || (baru === searchNormalized);
+                });
             }
+
+            let validKeys = new Set();
+            if (searchNormalized) validKeys.add(searchNormalized);
+
+            if (infoMaster) {
+                const idLok = normalizeText(getColValue(infoMaster, ['ID Lokasi', 'IDLokasi', 'Lokasi']));
+                const kdBaru = normalizeText(getColValue(infoMaster, ['Baru', 'Kode Baru', 'No Mesin Baru']));
+                if (idLok) validKeys.add(idLok);
+                if (kdBaru) validKeys.add(kdBaru);
+            }
+
+            const riwayatMentah = dataLaporanGlobal.filter(row => {
+                const idMesin = normalizeText(getColValue(row, ['ID Mesin', 'IDLokasi', 'ID']));
+                const noMesin = normalizeText(getColValue(row, ['No. Mesin', 'No Mesin', 'Kode Mesin']));
+                
+                return Array.from(validKeys).some(key => {
+                    if (!key) return false;
+                    return idMesin === key || noMesin === key || (idMesin && idMesin.includes(key)) || (noMesin && noMesin.includes(key));
+                });
+            });
+
+            if (!infoMaster && riwayatMentah.length === 0) {
+                alert(`Data tidak ditemukan! Kode ${qrText} belum terdaftar di Sistem.`);
+                resetScanner();
+                return;
+            }
+
+            if (infoMaster) {
+                document.getElementById('res-id-lokasi').innerText = cleanText(getColValue(infoMaster, ['ID Lokasi', 'IDLokasi']));
+                document.getElementById('res-no-mesin').innerText = cleanText(getColValue(infoMaster, ['Baru', 'Kode Baru']));
+                document.getElementById('res-nama').innerText = cleanText(getColValue(infoMaster, ['Nama Mesin', 'Nama']));
+                document.getElementById('res-tonase').innerText = cleanText(getColValue(infoMaster, ['Tonase', 'Capacity']));
+                const serialNum = getColValue(infoMaster, ['Serial Number', 'SN', 'Serial']);
+                document.getElementById('res-sn').innerText = cleanText(serialNum);
+                document.getElementById('res-spesifikasi').innerText = cleanText(getColValue(infoMaster, ['Spesifikasi', 'Spec']));
+            } else {
+                document.getElementById('res-id-lokasi').innerText = cleanText(getColValue(riwayatMentah[0], ['ID Mesin', 'ID Lokasi']));
+                document.getElementById('res-no-mesin').innerText = cleanText(getColValue(riwayatMentah[0], ['No. Mesin', 'No Mesin']));
+                document.getElementById('res-nama').innerText = cleanText(getColValue(riwayatMentah[0], ['Nama Mesin', 'Nama']));
+                document.getElementById('res-tonase').innerText = '-';
+                document.getElementById('res-spesifikasi').innerText = '-';
+                document.getElementById('res-sn').innerText = '-';
+            }
+
+            riwayatMesinAktif = riwayatMentah.map(item => {
+                const tgl = getColValue(item, ['Tanggal', 'Tgl']);
+                item._grupBulan = getBulanTahun(tgl);
+                return item;
+            });
+
+            setupFilterBulan(riwayatMesinAktif);
+            renderTimeline(riwayatMesinAktif);
+
+            document.getElementById('result-card').classList.remove('hidden');
         }
-        return '';
-    };
 
-    // 1. Cari data di Master Mesin
-    let infoMaster = null;
-    if (dataMasterGlobal.length > 0) {
-        infoMaster = dataMasterGlobal.find(row => {
-            const idLokasi = normalize(getColValue(row, ['ID Lokasi', 'IDLokasi', 'Lokasi']));
-            const baru = normalize(getColValue(row, ['Baru', 'Kode Baru', 'No Mesin Baru']));
-            return (idLokasi === searchNormalized) || (baru === searchNormalized);
-        });
-    }
-
-    // 2. Kumpulkan Kunci Pencarian
-    let validKeys = new Set();
-    if (searchNormalized) validKeys.add(searchNormalized);
-
-    if (infoMaster) {
-        const idLok = normalize(getColValue(infoMaster, ['ID Lokasi', 'IDLokasi', 'Lokasi']));
-        const kdBaru = normalize(getColValue(infoMaster, ['Baru', 'Kode Baru', 'No Mesin Baru']));
-        if (idLok) validKeys.add(idLok);
-        if (kdBaru) validKeys.add(kdBaru);
-    }
-
-    // 3. Filter Riwayat dari Sheet Laporan
-    const riwayatMentah = dataLaporanGlobal.filter(row => {
-        const idMesin = normalize(getColValue(row, ['ID Mesin', 'IDLokasi', 'ID']));
-        const noMesin = normalize(getColValue(row, ['No. Mesin', 'No Mesin', 'Kode Mesin']));
-        
-        return Array.from(validKeys).some(key => {
-            if (!key) return false;
-            return idMesin === key || noMesin === key || (idMesin && idMesin.includes(key)) || (noMesin && noMesin.includes(key));
-        });
-    });
-
-    if (!infoMaster && riwayatMentah.length === 0) {
-        alert(`Data tidak ditemukan! Kode ${qrText} belum terdaftar di Sistem.`);
-        resetScanner();
-        return;
-    }
-
-    // 4. Tampilkan Spesifikasi
-    if (infoMaster) {
-        document.getElementById('res-id-lokasi').innerText = cleanText(getColValue(infoMaster, ['ID Lokasi', 'IDLokasi']));
-        document.getElementById('res-no-mesin').innerText = cleanText(getColValue(infoMaster, ['Baru', 'Kode Baru']));
-        document.getElementById('res-nama').innerText = cleanText(getColValue(infoMaster, ['Nama Mesin', 'Nama']));
-        document.getElementById('res-tonase').innerText = cleanText(getColValue(infoMaster, ['Tonase']));
-        const serialNum = getColValue(infoMaster, ['Serial Number', 'SN', 'Serial']);
-        document.getElementById('res-sn').innerText = cleanText(serialNum);
-        document.getElementById('res-spesifikasi').innerText = cleanText(getColValue(infoMaster, ['Spesifikasi', 'Spec']));
-    } else {
-        document.getElementById('res-id-lokasi').innerText = cleanText(getColValue(riwayatMentah[0], ['ID Mesin', 'ID Lokasi']));
-        document.getElementById('res-no-mesin').innerText = cleanText(getColValue(riwayatMentah[0], ['No. Mesin', 'No Mesin']));
-        document.getElementById('res-nama').innerText = cleanText(getColValue(riwayatMentah[0], ['Nama Mesin', 'Nama']));
-        document.getElementById('res-tonase').innerText = '-';
-        document.getElementById('res-spesifikasi').innerText = '-';
-        document.getElementById('res-sn').innerText = '-';
-    }
-
-    // 5. Filter & Render Riwayat Perbaikan
-    riwayatMesinAktif = riwayatMentah.map(item => {
-        const tgl = getColValue(item, ['Tanggal', 'Tgl']);
-        item._grupBulan = getBulanTahun(tgl);
-        return item;
-    });
-
-    setupFilterBulan(riwayatMesinAktif);
-    renderTimeline(riwayatMesinAktif);
-
-    document.getElementById('result-card').classList.remove('hidden');
-}
-
-        
         function setupFilterBulan(data) {
             const filterContainer = document.getElementById('filter-container');
             const selectFilter = document.getElementById('month-filter');
@@ -432,7 +421,9 @@
             }
 
             let bulanUnik = new Set();
-            data.forEach(item => bulanUnik.add(item._grupBulan));
+            data.forEach(item => {
+                if (item._grupBulan) bulanUnik.add(item._grupBulan);
+            });
 
             if (bulanUnik.size > 0) {
                 bulanUnik.forEach(bulan => {
@@ -460,26 +451,26 @@
         function renderTimeline(dataUntukDitampilkan) {
             const riwayatContainer = document.getElementById('res-riwayat');
             riwayatContainer.innerHTML = ''; 
-            const cleanText = (text) => (!text || text.trim() === '') ? '-' : text;
+            const cleanText = (text) => (!text || text.trim() === '' || text.trim() === 'nan') ? '-' : text;
 
             if (dataUntukDitampilkan.length > 0) {
                 dataUntukDitampilkan.forEach(item => {
-                    const tanggal = cleanText(item['Tanggal']);
-                    const mulai = cleanText(item['Mulai']);
-                    const selesai = cleanText(item['Selesai']);
-                    const kendala = cleanText(item['Problem Mesin']);
-                    const tindakan = cleanText(item['Perbaikan Mesin']);
-                    const teknisi = cleanText(item['Nama']); 
-                    const sparepart = cleanText(item['Pergantian Spare Part']); 
-                    const qty = cleanText(item['QTY'] || item['Qty'] || item['qty']); 
-                    const sppm = cleanText(item['No. SPPM'] || item['No.sppm'] || item['No SPPM'] || item['SPPM'] || item['sppm']);
+                    const tanggal = cleanText(getColValue(item, ['Tanggal', 'Tgl']));
+                    const mulai = cleanText(getColValue(item, ['Mulai']));
+                    const selesai = cleanText(getColValue(item, ['Selesai']));
+                    const kendala = cleanText(getColValue(item, ['Problem Mesin', 'Problem']));
+                    const tindakan = cleanText(getColValue(item, ['Perbaikan Mesin', 'Perbaikan']));
+                    const teknisi = cleanText(getColValue(item, ['Nama'])); 
+                    const sparepart = cleanText(getColValue(item, ['Pergantian Spare Part', 'Pemakaian Sparepart'])); 
+                    const qty = cleanText(getColValue(item, ['QTY', 'Qty'])); 
+                    const sppm = cleanText(getColValue(item, ['No. SPPM', 'No SPPM', 'SPPM']));
                     
                     let detailSparepart = '-';
                     if (sparepart !== '-') {
                         detailSparepart = qty !== '-' ? `${sparepart} (QTY: ${qty})` : sparepart;
                     }
                     
-                    const statusVal = cleanText(item['Status'] || item['Statur']);
+                    const statusVal = cleanText(getColValue(item, ['Status', 'Statur']));
                     let statusBg = '#f1f5f9'; 
                     let statusColor = '#475569';
                     
