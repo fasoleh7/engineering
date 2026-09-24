@@ -292,8 +292,8 @@
 
         function prosesDataScan(qrText) {
     const rawSearch = qrText.trim().toUpperCase();
-    // Helper untuk normalisasi teks (menghapus spasi, strip, dan titik)
-    const normalize = (text) => text ? text.toString().toUpperCase().replace(/[\s\-_.]/g, '') : '';
+    // Helper untuk hapus semua karakter non-alphanumeric (spasi, strip, titik, dll)
+    const normalize = (text) => text ? text.toString().toUpperCase().replace(/[^A-Z0-9]/g, '') : '';
     const searchNormalized = normalize(rawSearch);
 
     const cleanText = (text) => (!text || text.trim() === '') ? '-' : text;
@@ -308,18 +308,25 @@
         });
     }
 
-    // 2. Kumpulkan kunci pencarian aktif (ID Lokasi & Baru)
-    let targetKeys = new Set([searchNormalized]);
+    // 2. Kumpulkan semua bentuk kemungkinan ID & Kode Mesin yang valid
+    let validKeys = new Set();
+    if (searchNormalized) validKeys.add(searchNormalized);
+
     if (infoMaster) {
-        if (infoMaster['ID Lokasi']) targetKeys.add(normalize(infoMaster['ID Lokasi']));
-        if (infoMaster['Baru']) targetKeys.add(normalize(infoMaster['Baru']));
+        if (infoMaster['ID Lokasi']) validKeys.add(normalize(infoMaster['ID Lokasi']));
+        if (infoMaster['Baru']) validKeys.add(normalize(infoMaster['Baru']));
     }
 
-    // 3. Cari riwayat di Sheet Laporan berdasarkan ID Lokasi dan Kode Baru
+    // 3. Cari riwayat di Sheet Laporan secara fleksibel
     const riwayatMentah = dataLaporanGlobal.filter(row => {
         const idMesin = normalize(row['ID Mesin']);
         const noMesin = normalize(row['No. Mesin']);
-        return targetKeys.has(idMesin) || targetKeys.has(noMesin);
+        
+        // Cek kecocokan langsung atau jika salah satu mengandung nilai kunci
+        return Array.from(validKeys).some(key => {
+            if (!key) return false;
+            return idMesin === key || noMesin === key || idMesin.includes(key) || key.includes(idMesin) || noMesin.includes(key) || key.includes(noMesin);
+        });
     });
 
     if (!infoMaster && riwayatMentah.length === 0) {
