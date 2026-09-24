@@ -236,32 +236,57 @@
         let riwayatMesinAktif = []; 
 
         function fetchDataFromSheet() {
-    // Membaca Sheet Laporan Perbaikan
+    // 1. Ambil Data Laporan
     Papa.parse(sheetLaporanUrl, {
         download: true,
-        header: true,
-        // Jika Baris 1 kosong/judul, kita pastikan header diambil dari baris yang tepat
-        transformHeader: function(h) { return h.trim(); }, 
-        complete: function(results) { 
-            // Jika baris pertama data kosong karena header di baris 2, filter baris valid
-            dataLaporanGlobal = results.data.filter(row => {
-                const keys = Object.keys(row);
-                // Pastikan baris memiliki data dan bukan baris header terulang
-                return keys.some(k => row[k] && row[k].trim() !== '');
-            });
+        header: false, // Dibaca sebagai array 2D agar kita bisa cari baris header sendiri
+        complete: function(results) {
+            const rawRows = results.data;
+            if (!rawRows || rawRows.length === 0) return;
+
+            // Cari indeks baris yang berisi kata 'Tanggal' atau 'ID Mesin' (Header)
+            let headerIndex = rawRows.findIndex(row => 
+                row.some(cell => cell && (cell.toString().trim() === 'Tanggal' || cell.toString().trim() === 'ID Mesin'))
+            );
+
+            if (headerIndex === -1) headerIndex = 0; // Fallback jika tidak ditemukan
+
+            const headers = rawRows[headerIndex].map(h => h ? h.toString().trim() : '');
+            
+            // Konversi baris di bawah header menjadi objek JSON
+            dataLaporanGlobal = rawRows.slice(headerIndex + 1).map(row => {
+                let obj = {};
+                headers.forEach((h, i) => {
+                    if (h) obj[h] = row[i] ? row[i].toString().trim() : '';
+                });
+                return obj;
+            }).filter(obj => Object.values(obj).some(val => val !== ''));
         }
     });
 
-    // Membaca Sheet Master Mesin
+    // 2. Ambil Data Master Mesin
     Papa.parse(sheetMasterMesinUrl, {
         download: true,
-        header: true,
-        transformHeader: function(h) { return h.trim(); }, 
-        complete: function(results) { 
-            dataMasterGlobal = results.data.filter(row => {
-                const keys = Object.keys(row);
-                return keys.some(k => row[k] && row[k].trim() !== '');
-            }); 
+        header: false,
+        complete: function(results) {
+            const rawRows = results.data;
+            if (!rawRows || rawRows.length === 0) return;
+
+            let headerIndex = rawRows.findIndex(row => 
+                row.some(cell => cell && (cell.toString().trim().toUpperCase().includes('LOKASI') || cell.toString().trim().toUpperCase().includes('BARU')))
+            );
+
+            if (headerIndex === -1) headerIndex = 0;
+
+            const headers = rawRows[headerIndex].map(h => h ? h.toString().trim() : '');
+
+            dataMasterGlobal = rawRows.slice(headerIndex + 1).map(row => {
+                let obj = {};
+                headers.forEach((h, i) => {
+                    if (h) obj[h] = row[i] ? row[i].toString().trim() : '';
+                });
+                return obj;
+            }).filter(obj => Object.values(obj).some(val => val !== ''));
         }
     });
 }
