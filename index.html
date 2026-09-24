@@ -236,20 +236,35 @@
         let riwayatMesinAktif = []; 
 
         function fetchDataFromSheet() {
-            Papa.parse(sheetLaporanUrl, {
-                download: true,
-                header: true,
-                transformHeader: function(h) { return h.trim(); }, 
-                complete: function(results) { dataLaporanGlobal = results.data; }
-            });
-
-            Papa.parse(sheetMasterMesinUrl, {
-                download: true,
-                header: true,
-                transformHeader: function(h) { return h.trim(); }, 
-                complete: function(results) { dataMasterGlobal = results.data; }
+    // Membaca Sheet Laporan Perbaikan
+    Papa.parse(sheetLaporanUrl, {
+        download: true,
+        header: true,
+        // Jika Baris 1 kosong/judul, kita pastikan header diambil dari baris yang tepat
+        transformHeader: function(h) { return h.trim(); }, 
+        complete: function(results) { 
+            // Jika baris pertama data kosong karena header di baris 2, filter baris valid
+            dataLaporanGlobal = results.data.filter(row => {
+                const keys = Object.keys(row);
+                // Pastikan baris memiliki data dan bukan baris header terulang
+                return keys.some(k => row[k] && row[k].trim() !== '');
             });
         }
+    });
+
+    // Membaca Sheet Master Mesin
+    Papa.parse(sheetMasterMesinUrl, {
+        download: true,
+        header: true,
+        transformHeader: function(h) { return h.trim(); }, 
+        complete: function(results) { 
+            dataMasterGlobal = results.data.filter(row => {
+                const keys = Object.keys(row);
+                return keys.some(k => row[k] && row[k].trim() !== '');
+            }); 
+        }
+    });
+}
 
         function onScanSuccess(decodedText) { 
             hentikanScanner(); 
@@ -292,40 +307,54 @@
 
         function prosesDataScan(qrText) {
     const rawSearch = qrText.trim().toUpperCase();
-    // Helper untuk hapus semua karakter non-alphanumeric (spasi, strip, titik, dll)
     const normalize = (text) => text ? text.toString().toUpperCase().replace(/[^A-Z0-9]/g, '') : '';
     const searchNormalized = normalize(rawSearch);
 
     const cleanText = (text) => (!text || text.trim() === '') ? '-' : text;
 
-    // 1. Cari data di Sheet Master Mesin (hanya mencocokkan 'ID Lokasi' dan 'Baru', mengabaikan 'Lama')
+    // Helper pembaca kolom toleran
+    const getColValue = (row, possibleNames) => {
+        if (!row) return '';
+        const keys = Object.keys(row);
+        for (let name of possibleNames) {
+            const targetNorm = normalize(name);
+            const foundKey = keys.find(k => normalize(k) === targetNorm);
+            if (foundKey && row[foundKey] !== undefined && row[foundKey] !== null) {
+                return row[foundKey].toString().trim();
+            }
+        }
+        return '';
+    };
+
+    // 1. Cari data di Master Mesin
     let infoMaster = null;
     if (dataMasterGlobal.length > 0) {
         infoMaster = dataMasterGlobal.find(row => {
-            const idLokasi = normalize(row['ID Lokasi']);
-            const baru = normalize(row['Baru']);
+            const idLokasi = normalize(getColValue(row, ['ID Lokasi', 'IDLokasi', 'Lokasi']));
+            const baru = normalize(getColValue(row, ['Baru', 'Kode Baru', 'No Mesin Baru']));
             return (idLokasi === searchNormalized) || (baru === searchNormalized);
         });
     }
 
-    // 2. Kumpulkan semua bentuk kemungkinan ID & Kode Mesin yang valid
+    // 2. Kumpulkan Kunci Pencarian
     let validKeys = new Set();
     if (searchNormalized) validKeys.add(searchNormalized);
 
     if (infoMaster) {
-        if (infoMaster['ID Lokasi']) validKeys.add(normalize(infoMaster['ID Lokasi']));
-        if (infoMaster['Baru']) validKeys.add(normalize(infoMaster['Baru']));
+        const idLok = normalize(getColValue(infoMaster, ['ID Lokasi', 'IDLokasi', 'Lokasi']));
+        const kdBaru = normalize(getColValue(infoMaster, ['Baru', 'Kode Baru', 'No Mesin Baru']));
+        if (idLok) validKeys.add(idLok);
+        if (kdBaru) validKeys.add(kdBaru);
     }
 
-    // 3. Cari riwayat di Sheet Laporan secara fleksibel
+    // 3. Filter Riwayat dari Sheet Laporan
     const riwayatMentah = dataLaporanGlobal.filter(row => {
-        const idMesin = normalize(row['ID Mesin']);
-        const noMesin = normalize(row['No. Mesin']);
+        const idMesin = normalize(getColValue(row, ['ID Mesin', 'IDLokasi', 'ID']));
+        const noMesin = normalize(getColValue(row, ['No. Mesin', 'No Mesin', 'Kode Mesin']));
         
-        // Cek kecocokan langsung atau jika salah satu mengandung nilai kunci
         return Array.from(validKeys).some(key => {
             if (!key) return false;
-            return idMesin === key || noMesin === key || idMesin.includes(key) || key.includes(idMesin) || noMesin.includes(key) || key.includes(noMesin);
+            return idMesin === key || noMesin === key || (idMesin && idMesin.includes(key)) || (noMesin && noMesin.includes(key));
         });
     });
 
@@ -335,33 +364,29 @@
         return;
     }
 
-    // 4. Tampilkan Spesifikasi Mesin
+    // 4. Tampilkan Spesifikasi
     if (infoMaster) {
-        document.getElementById('res-id-lokasi').innerText = cleanText(infoMaster['ID Lokasi']);
-        document.getElementById('res-no-mesin').innerText = cleanText(infoMaster['Baru']);
-        document.getElementById('res-nama').innerText = cleanText(infoMaster['Nama Mesin']);
-        document.getElementById('res-tonase').innerText = cleanText(infoMaster['Tonase']);
-        const serialNum = infoMaster['Serial Number'] || infoMaster['SN'] || '-';
+        document.getElementById('res-id-lokasi').innerText = cleanText(getColValue(infoMaster, ['ID Lokasi', 'IDLokasi']));
+        document.getElementById('res-no-mesin').innerText = cleanText(getColValue(infoMaster, ['Baru', 'Kode Baru']));
+        document.getElementById('res-nama').innerText = cleanText(getColValue(infoMaster, ['Nama Mesin', 'Nama']));
+        document.getElementById('res-tonase').innerText = cleanText(getColValue(infoMaster, ['Tonase']));
+        const serialNum = getColValue(infoMaster, ['Serial Number', 'SN', 'Serial']);
         document.getElementById('res-sn').innerText = cleanText(serialNum);
-        document.getElementById('res-spesifikasi').innerText = cleanText(infoMaster['Spesifikasi']);
+        document.getElementById('res-spesifikasi').innerText = cleanText(getColValue(infoMaster, ['Spesifikasi', 'Spec']));
     } else {
-        document.getElementById('res-id-lokasi').innerText = cleanText(riwayatMentah[0]['ID Mesin']);
-        document.getElementById('res-no-mesin').innerText = cleanText(riwayatMentah[0]['No. Mesin']);
-        document.getElementById('res-nama').innerText = cleanText(riwayatMentah[0]['Nama Mesin']);
+        document.getElementById('res-id-lokasi').innerText = cleanText(getColValue(riwayatMentah[0], ['ID Mesin', 'ID Lokasi']));
+        document.getElementById('res-no-mesin').innerText = cleanText(getColValue(riwayatMentah[0], ['No. Mesin', 'No Mesin']));
+        document.getElementById('res-nama').innerText = cleanText(getColValue(riwayatMentah[0], ['Nama Mesin', 'Nama']));
         document.getElementById('res-tonase').innerText = '-';
         document.getElementById('res-spesifikasi').innerText = '-';
         document.getElementById('res-sn').innerText = '-';
     }
 
     // 5. Filter & Render Riwayat Perbaikan
-    riwayatMesinAktif = riwayatMentah.filter(item => {
-        const problem = item['Problem Mesin'] ? item['Problem Mesin'].toUpperCase() : '';
-        const tanggal = item['Tanggal'] ? item['Tanggal'].toUpperCase() : '';
-        if (problem.includes('#N/A') || problem.includes('#REF') || tanggal.includes('#N/A') || problem === '' || tanggal === '') {
-            return false;
-        }
-        item._grupBulan = getBulanTahun(item['Tanggal']);
-        return true;
+    riwayatMesinAktif = riwayatMentah.map(item => {
+        const tgl = getColValue(item, ['Tanggal', 'Tgl']);
+        item._grupBulan = getBulanTahun(tgl);
+        return item;
     });
 
     setupFilterBulan(riwayatMesinAktif);
@@ -369,6 +394,8 @@
 
     document.getElementById('result-card').classList.remove('hidden');
 }
+
+        
         function setupFilterBulan(data) {
             const filterContainer = document.getElementById('filter-container');
             const selectFilter = document.getElementById('month-filter');
