@@ -291,64 +291,77 @@
         }
 
         function prosesDataScan(qrText) {
-            const searchText = qrText.trim().toUpperCase();
-            const cleanText = (text) => (!text || text.trim() === '') ? '-' : text;
+    const rawSearch = qrText.trim().toUpperCase();
+    // Helper untuk normalisasi teks (menghapus spasi, strip, dan titik)
+    const normalize = (text) => text ? text.toString().toUpperCase().replace(/[\s\-_.]/g, '') : '';
+    const searchNormalized = normalize(rawSearch);
 
-            let infoMaster = null;
-            if (dataMasterGlobal.length > 0) {
-                infoMaster = dataMasterGlobal.find(row => {
-                    const idLokasi = row['ID Lokasi'] ? row['ID Lokasi'].trim().toUpperCase() : '';
-                    const lama = row['Lama'] ? row['Lama'].trim().toUpperCase() : '';
-                    const baru = row['Baru'] ? row['Baru'].trim().toUpperCase() : '';
-                    return (idLokasi === searchText) || (lama === searchText) || (baru === searchText);
-                });
-            }
+    const cleanText = (text) => (!text || text.trim() === '') ? '-' : text;
 
-            const riwayatMentah = dataLaporanGlobal.filter(row => {
-                const idMesin = row['ID Mesin'] ? row['ID Mesin'].trim().toUpperCase() : '';
-                const noMesin = row['No. Mesin'] ? row['No. Mesin'].trim().toUpperCase() : '';
-                return (idMesin === searchText) || (noMesin === searchText);
-            });
+    // 1. Cari data di Sheet Master Mesin (hanya mencocokkan 'ID Lokasi' dan 'Baru', mengabaikan 'Lama')
+    let infoMaster = null;
+    if (dataMasterGlobal.length > 0) {
+        infoMaster = dataMasterGlobal.find(row => {
+            const idLokasi = normalize(row['ID Lokasi']);
+            const baru = normalize(row['Baru']);
+            return (idLokasi === searchNormalized) || (baru === searchNormalized);
+        });
+    }
 
-            if (!infoMaster && riwayatMentah.length === 0) {
-                alert(`Data tidak ditemukan! Kode ${searchText} belum terdaftar di Sistem.`);
-                resetScanner();
-                return;
-            }
+    // 2. Kumpulkan kunci pencarian aktif (ID Lokasi & Baru)
+    let targetKeys = new Set([searchNormalized]);
+    if (infoMaster) {
+        if (infoMaster['ID Lokasi']) targetKeys.add(normalize(infoMaster['ID Lokasi']));
+        if (infoMaster['Baru']) targetKeys.add(normalize(infoMaster['Baru']));
+    }
 
-            if (infoMaster) {
-                document.getElementById('res-id-lokasi').innerText = cleanText(infoMaster['ID Lokasi']);
-                document.getElementById('res-no-mesin').innerText = cleanText(infoMaster['Baru']);
-                document.getElementById('res-nama').innerText = cleanText(infoMaster['Nama Mesin']);
-                document.getElementById('res-tonase').innerText = cleanText(infoMaster['Tonase']);
-                const serialNum = infoMaster['Serial Number'] || infoMaster['SN'] || '-';
-                document.getElementById('res-sn').innerText = cleanText(serialNum);
-                document.getElementById('res-spesifikasi').innerText = cleanText(infoMaster['Spesifikasi']);
-            } else {
-                document.getElementById('res-id-lokasi').innerText = cleanText(riwayatMentah[0]['ID Mesin']);
-                document.getElementById('res-no-mesin').innerText = cleanText(riwayatMentah[0]['No. Mesin']);
-                document.getElementById('res-nama').innerText = cleanText(riwayatMentah[0]['Nama Mesin']);
-                document.getElementById('res-tonase').innerText = '-';
-                document.getElementById('res-spesifikasi').innerText = '-';
-                document.getElementById('res-sn').innerText = '-';
-            }
+    // 3. Cari riwayat di Sheet Laporan berdasarkan ID Lokasi dan Kode Baru
+    const riwayatMentah = dataLaporanGlobal.filter(row => {
+        const idMesin = normalize(row['ID Mesin']);
+        const noMesin = normalize(row['No. Mesin']);
+        return targetKeys.has(idMesin) || targetKeys.has(noMesin);
+    });
 
-            riwayatMesinAktif = riwayatMentah.filter(item => {
-                const problem = item['Problem Mesin'] ? item['Problem Mesin'].toUpperCase() : '';
-                const tanggal = item['Tanggal'] ? item['Tanggal'].toUpperCase() : '';
-                if (problem.includes('#N/A') || problem.includes('#REF') || tanggal.includes('#N/A') || problem === '' || tanggal === '') {
-                    return false;
-                }
-                item._grupBulan = getBulanTahun(item['Tanggal']);
-                return true;
-            });
+    if (!infoMaster && riwayatMentah.length === 0) {
+        alert(`Data tidak ditemukan! Kode ${qrText} belum terdaftar di Sistem.`);
+        resetScanner();
+        return;
+    }
 
-            setupFilterBulan(riwayatMesinAktif);
-            renderTimeline(riwayatMesinAktif);
+    // 4. Tampilkan Spesifikasi Mesin
+    if (infoMaster) {
+        document.getElementById('res-id-lokasi').innerText = cleanText(infoMaster['ID Lokasi']);
+        document.getElementById('res-no-mesin').innerText = cleanText(infoMaster['Baru']);
+        document.getElementById('res-nama').innerText = cleanText(infoMaster['Nama Mesin']);
+        document.getElementById('res-tonase').innerText = cleanText(infoMaster['Tonase']);
+        const serialNum = infoMaster['Serial Number'] || infoMaster['SN'] || '-';
+        document.getElementById('res-sn').innerText = cleanText(serialNum);
+        document.getElementById('res-spesifikasi').innerText = cleanText(infoMaster['Spesifikasi']);
+    } else {
+        document.getElementById('res-id-lokasi').innerText = cleanText(riwayatMentah[0]['ID Mesin']);
+        document.getElementById('res-no-mesin').innerText = cleanText(riwayatMentah[0]['No. Mesin']);
+        document.getElementById('res-nama').innerText = cleanText(riwayatMentah[0]['Nama Mesin']);
+        document.getElementById('res-tonase').innerText = '-';
+        document.getElementById('res-spesifikasi').innerText = '-';
+        document.getElementById('res-sn').innerText = '-';
+    }
 
-            document.getElementById('result-card').classList.remove('hidden');
+    // 5. Filter & Render Riwayat Perbaikan
+    riwayatMesinAktif = riwayatMentah.filter(item => {
+        const problem = item['Problem Mesin'] ? item['Problem Mesin'].toUpperCase() : '';
+        const tanggal = item['Tanggal'] ? item['Tanggal'].toUpperCase() : '';
+        if (problem.includes('#N/A') || problem.includes('#REF') || tanggal.includes('#N/A') || problem === '' || tanggal === '') {
+            return false;
         }
+        item._grupBulan = getBulanTahun(item['Tanggal']);
+        return true;
+    });
 
+    setupFilterBulan(riwayatMesinAktif);
+    renderTimeline(riwayatMesinAktif);
+
+    document.getElementById('result-card').classList.remove('hidden');
+}
         function setupFilterBulan(data) {
             const filterContainer = document.getElementById('filter-container');
             const selectFilter = document.getElementById('month-filter');
